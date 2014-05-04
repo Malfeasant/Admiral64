@@ -1,12 +1,10 @@
 package us.malfeasant.admiral64.vic;
 
-class ColorReg {
-	int color;
-	
-	void set(int c) {
-		color = c & 0xf;
+class ColorReg extends IntRegister {
+	void unpack(int c) {
+		super.unpack(c & 0xf);
 	}
-	int get() {
-		return color | 0xf0;
+	int pack() {
+		return super.pack() | ~0xf;
 	}
 }

@@ -3,6 +3,16 @@ package us.malfeasant.admiral64.vic;
 class RegisterBank {
 	final SpriteWrangler sprites;
 	final ColorReg[] colors = new ColorReg[7];
+	int rasterComp;
+	int raster;
+	boolean extColor;
+	boolean bitmap;
+	boolean displayEn;
+	boolean allRows;
+	int yScroll;
+	int lpx;
+	int lpy;
+	boolean res;
 	
 	RegisterBank() {
 		sprites = new SpriteWrangler();
@@ -34,9 +44,9 @@ class RegisterBank {
 		} else if (addr >= 0x20) {	// other color
 			int col = addr - 0x20;
 			if (read) {
-				data = colors[col].get();
+				data = colors[col].pack();
 			} else {
-				colors[col].set(data);
+				colors[col].unpack(data);
 			}
 		} else {	// anything else
 			switch (addr) {

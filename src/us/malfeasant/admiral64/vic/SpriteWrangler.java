@@ -36,10 +36,10 @@ class SpriteWrangler {
 	}
 	
 	int getColor(int sprite) {
-		return spriteControl[sprite].color.get();
+		return spriteControl[sprite].color.pack();
 	}
 	void setColor(int sprite, int color) {
-		spriteControl[sprite].color.set(color);
+		spriteControl[sprite].color.unpack(color);
 	}
 	
 	int getEnable() {
