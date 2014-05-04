@@ -8,41 +8,24 @@ class SpriteControl {
 	boolean multicolor;
 	boolean collideSprite;
 	boolean collideData;
-	int color;
+	final ColorReg color;
 	int xPos;
 	int yPos;
-	private final int weight;
+	final int weight;
 	
 	SpriteControl(int which) {
 		weight = 1 << which;
+		color = new ColorReg();
 	}
-	int pos(int a, int d, boolean read) {
-		if (a == 0x10) {	// MSB
-			if (read) {
-				d = (xPos & 0x100) == 0 ? 0 : weight;
-			} else {
-				if ((weight & d) == 0) {
-					xPos &= 0xff;
-				} else {
-					xPos |= 0x100;
-				}
-			}
-		} else {
-			if ((a & 1) == 0) {
-				if (read) {
-					d = xPos & 0xff;
-				} else {
-					xPos &= 0x100;
-					xPos |= d;
-				}
-			} else {
-				if (read) {
-					d = yPos;
-				} else {
-					yPos = d;
-				}
-			}
-		}
-		return d;
+	
+	boolean getCollideS() {
+		boolean b = collideSprite;
+		collideSprite = false;
+		return b;
+	}
+	boolean getCollideD() {
+		boolean b = collideData;
+		collideData = false;
+		return b;
 	}
 }
