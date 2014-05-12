@@ -15,7 +15,6 @@ public class Registers {
 	};
 	private final Register[] busView = new Register[REGCOUNT];
 	private final byte[] colors = new byte[7];
-	
 	private final byte[] spriteColors = new byte[SPRITES];
 	private final int[] spriteX = new int[SPRITES];
 	private final int[] spriteY = new int[SPRITES];
@@ -26,7 +25,7 @@ public class Registers {
 	private final boolean[] spriteDataPriority = new boolean[SPRITES];
 	private final boolean[] spriteCollideSprite = new boolean[SPRITES];
 	private final boolean[] spriteCollideData = new boolean[SPRITES];
-	
+	private final Interrupt interrupt = new Interrupt();
 	private int rasterCompare;
 	private int rasterCurrent;
 	private int scrollX;
@@ -35,10 +34,13 @@ public class Registers {
 	private boolean multiColor;
 	private boolean extColor;
 	private boolean displayEnable;
+	private boolean reset;	// apparently unused
 	private boolean wide;
 	private boolean tall;
 	private int lightPenX;
 	private int lightPenY;
+	private int vm;
+	private int cb;
 	
 	public Registers() {
 		for (int i = 0; i < SPRITES; ++i) {
@@ -126,7 +128,38 @@ public class Registers {
 			}
 		};
 		busView[0x15] = new SpriteFlags(spriteEn);
+		busView[0x16] = new Register() {
+			@Override
+			public int pack() {
+				int data = scrollX;
+				data |= 0xc0;	// dead bits
+				if (reset) data |= 0x20;
+				if (multiColor) data |= 0x10;
+				if (wide) data |= 8;
+				return data;
+			}
+			@Override
+			public void unpack(int data) {
+				scrollX = data & 7;
+				reset = (data & 0x20) != 0;
+				multiColor = (data & 0x10) != 0;
+				wide = (data & 8) != 0;
+			}
+		};
 		busView[0x17] = new SpriteFlags(spriteExpandY);
+		busView[0x18] = new Register() {
+			@Override
+			public int pack() {
+				return 1 | ((vm >> 6) & 0xf0) | ((cb >> 10) & 0xe);
+			}
+			@Override
+			public void unpack(int data) {
+				vm = (data & 0xf0) << 6;
+				cb = (data & 0xe) << 10;
+			}
+		};
+		busView[0x19] = interrupt.latch;
+		busView[0x1a] = interrupt.enable;
 		busView[0x1b] = new SpriteFlags(spriteDataPriority);
 		busView[0x1c] = new SpriteFlags(spriteMC);
 		busView[0x1d] = new SpriteFlags(spriteExpandX);
@@ -138,8 +171,5 @@ public class Registers {
 	}
 	Register select(int addr) {
 		return addr > REGCOUNT ? DEAD : busView[addr];
-	}
-	boolean rasterMatch(int now) {
-		return now == rasterCurrent;
 	}
 }
