@@ -2,7 +2,7 @@ package us.malfeasant.admiral64.vic;
 
 import us.malfeasant.admiral64.plumbing.Register;
 
-class Interrupt {
+class InterruptWrangler {
 	private boolean irq;
 	private boolean raster;
 	private boolean enableRaster;
@@ -33,7 +33,7 @@ class Interrupt {
 				raster = false;
 				sync = true;
 			}
-			if (sync) ;	// sync irq
+			if (sync) sync();
 		}
 		@Override
 		public int pack() {
@@ -64,4 +64,24 @@ class Interrupt {
 			return data;
 		}
 	};
+	void setRaster() {
+		raster = true;
+		sync();
+	}
+	void setLightPen() {
+		lightPen = true;
+		sync();
+	}
+	void setDataCollision() {
+		dataCollision = true;
+		sync();
+	}
+	void setSpriteCollision() {
+		spriteCollision = true;
+		sync();
+	}
+	private void sync() {
+		irq = (raster & enableRaster) | (spriteCollision & enableSpriteCollision) |
+				(dataCollision & enableDataCollision) | (lightPen & enableLightPen);
+	}
 }
