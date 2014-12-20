@@ -1,8 +1,9 @@
 package us.malfeasant.admiral64.vic;
 
+import us.malfeasant.admiral64.plumbing.Interrupter;
 import us.malfeasant.admiral64.plumbing.Register;
 
-class InterruptWrangler {
+class InterruptWrangler implements Interrupter {
 	private boolean irq;
 	private boolean raster;
 	private boolean enableRaster;
@@ -83,5 +84,9 @@ class InterruptWrangler {
 	private void sync() {
 		irq = (raster & enableRaster) | (spriteCollision & enableSpriteCollision) |
 				(dataCollision & enableDataCollision) | (lightPen & enableLightPen);
+	}
+	@Override
+	public boolean checkInterrupt() {
+		return irq;
 	}
 }

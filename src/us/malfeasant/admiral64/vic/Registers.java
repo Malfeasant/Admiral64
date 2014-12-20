@@ -1,8 +1,9 @@
 package us.malfeasant.admiral64.vic;
 
+import us.malfeasant.admiral64.plumbing.Interrupter;
 import us.malfeasant.admiral64.plumbing.Register;
 
-class Registers {
+class Registers implements Interrupter {
 	private static final int REGCOUNT = 47;
 	private static final Register DEAD = new Register() {
 		@Override
@@ -142,5 +143,9 @@ class Registers {
 	}
 	Register select(int addr) {
 		return addr > REGCOUNT ? DEAD : busView[addr];
+	}
+	@Override
+	public boolean checkInterrupt() {
+		return interrupt.checkInterrupt();
 	}
 }
