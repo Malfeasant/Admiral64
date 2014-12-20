@@ -5,7 +5,7 @@ import us.malfeasant.admiral64.plumbing.Register;
 class SpriteFlags implements Register {
 	private final boolean[] flags;
 	
-	public SpriteFlags(boolean[] flags) {
+	SpriteFlags(boolean[] flags) {
 		this.flags = flags;
 	}
 

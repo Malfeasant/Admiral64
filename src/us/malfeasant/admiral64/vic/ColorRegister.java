@@ -6,7 +6,7 @@ class ColorRegister implements Register {
 	private final byte[] array;
 	private final int position;
 	
-	public ColorRegister(byte[] array, int position) {
+	ColorRegister(byte[] array, int position) {
 		this.array = array;
 		this.position = position;
 	}

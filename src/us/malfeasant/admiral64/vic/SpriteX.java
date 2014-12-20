@@ -6,7 +6,7 @@ class SpriteX implements Register {
 	private final int[] array;
 	private final int position;
 	
-	public SpriteX(int[] a, int pos) {
+	SpriteX(int[] a, int pos) {
 		array = a;
 		position = pos;
 	}

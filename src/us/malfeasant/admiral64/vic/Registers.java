@@ -2,7 +2,7 @@ package us.malfeasant.admiral64.vic;
 
 import us.malfeasant.admiral64.plumbing.Register;
 
-public class Registers {
+class Registers {
 	private static final int REGCOUNT = 47;
 	private static final Register DEAD = new Register() {
 		@Override
@@ -32,7 +32,7 @@ public class Registers {
 	private int vm;
 	private int cb;
 	
-	public Registers() {
+	Registers() {
 		for (int i = 0; i < SpriteWrangler.SPRITES; ++i) {
 			busView[i * 2] = sprites.xLo[i];
 			busView[i * 2 + 1] = sprites.y[i];
