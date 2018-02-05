@@ -29,6 +29,7 @@ public class Launch extends Application {
 		Canvas canvas = new Canvas(800, 600);
 		GraphicsContext gc = canvas.getGraphicsContext2D();
 		TimingGenerator tg = new TimingGenerator();
+		tg.start();
 		VBox vbox = new VBox(canvas, tg.getButtons());
 		
 		BorderPane root = new BorderPane(vbox);
