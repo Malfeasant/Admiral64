@@ -15,7 +15,7 @@ public class TimingGenerator extends AnimationTimer {
 	long elapsed;	// total time since arbitrary point
 	long interval;	// current frame's duration
 	long cyclesDone;	// total cycles run since arbitrary point
-	long targetCycles;	// cycles to run in next interval
+	int targetCycles = 15000;	// cycles to run in next interval (only used for realtime)
 	private final HBox buttons = new HBox();
 	final Oscillator osc = Oscillator.NTSC;	// TODO: make this configurable
 	

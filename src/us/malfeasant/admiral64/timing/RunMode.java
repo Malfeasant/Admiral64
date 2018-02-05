@@ -6,15 +6,33 @@ enum RunMode {
 	STEP("|>") {
 		@Override
 		void setup(TimingGenerator tg) {
+			// deliberately not calling super.setup(tg) as there's no point to reset the calc with every step
 			tg.runFor(1);
 		}
 	},
 	REAL(">") {
 		@Override
+		void setup(TimingGenerator tg) {
+			super.setup(tg);
+			tg.runFor(tg.targetCycles);	// Have to guess for first batch, otherwise rate adjust divides by 0.
+		}
+		@Override
 		void timerFired(TimingGenerator tg) {
+			double targetRate = tg.osc.cyclesPerSecond;
+			double actualRate = tg.cyclesDone * 1e9 / tg.elapsed;
+			double slip = targetRate / actualRate;
+			tg.targetCycles *= slip;
+			tg.runFor(tg.targetCycles);
+			System.out.println("Actual: " + actualRate + "\tTarget: " + targetRate);
+			System.out.println("Slip is " + slip + "\tRunning for " + tg.targetCycles + " cycles.");
 		}
 	},
 	FAST(">>") {
+		@Override
+		void setup(TimingGenerator tg) {
+			super.setup(tg);
+			tg.runFor(tg.osc.cycles);	// run first batch, further batches will be run after work comes back
+		}
 		@Override
 		void workDone(TimingGenerator tg) {
 			tg.runFor(tg.osc.cycles);
