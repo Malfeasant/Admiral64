@@ -14,6 +14,8 @@ import javafx.scene.layout.HBox;
 public class TimingGenerator {
 	private final HBox buttons = new HBox();
 	private final Map<RunMode.Mode, RunMode> modes;
+	final Oscillator osc = Oscillator.NTSC;	// TODO: make this configurable
+	
 	public TimingGenerator() {
 		Map<RunMode.Mode, RunMode> map = new EnumMap<>(RunMode.Mode.class);
 		for (RunMode.Mode m : RunMode.Mode.values()) {
