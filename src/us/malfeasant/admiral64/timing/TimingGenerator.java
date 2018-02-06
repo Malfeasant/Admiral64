@@ -47,13 +47,13 @@ public class TimingGenerator extends AnimationTimer {
 		cyclesDone += cycles;
 		Platform.runLater(() -> mode.workDone(this));	// simulate a response from worker thread
 		
-		context.setFill(Color.GHOSTWHITE);
+		context.setFill(Color.grayRgb(0xf4));
 		context.fillRect(0, 0, 800, 600);
 		context.setFill(Color.BLACK);
-		context.fillText("Ran " + cycles + " cycles in " + interval / 1e6 +
-				" milliseconds: " + cycles * 1e3 / interval + "MHz", 20, 20);
-		context.fillText("Long term: " + cyclesDone + " cycles in " + elapsed /
-				1e9 + " seconds: " + cyclesDone * 1e3 / elapsed + "MHz", 40, 40);
+		context.fillText(String.format("%9d cycles\t%5.3f milliseconds\t%.9fMHz",
+				cycles, interval / 1e6, cycles * 1e3 / interval), 20, 20);
+		context.fillText(String.format("Long term: %d cycles\t%.3f seconds\t%.9fMHz",
+				cyclesDone, elapsed / 1e9, cyclesDone * 1e3 / elapsed), 40, 40);
 	}
 	void setMode(RunMode m) {
 		if (m != RunMode.STEP && mode == m) return;	// If old and new are the same, we only care if it's a step

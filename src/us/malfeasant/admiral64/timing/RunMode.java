@@ -11,15 +11,12 @@ enum RunMode {
 		}
 	},
 	REAL(">") {
-/*		@Override
-		void setup(TimingGenerator tg) {
-			super.setup(tg);
-			tg.runFor(tg.targetCycles);	// Have to guess for first batch, otherwise rate adjust divides by 0.
-		}*/
 		@Override
 		void timerFired(TimingGenerator tg) {
-			long c = ((tg.interval + tg.remainder) * tg.osc.cycles) / (tg.osc.seconds * 1000000000L);	      //  34090909
-			tg.remainder = ((tg.interval + tg.remainder) * tg.osc.cycles) % (tg.osc.seconds * 1000000000L);   // 996250000
+			long c = (tg.interval * tg.osc.cycles + tg.remainder) / (tg.osc.seconds * 1000000000L);
+			// 17045
+			tg.remainder = (tg.interval * tg.osc.cycles + tg.remainder) % (tg.osc.seconds * 1000000000L);
+			// 4992500000
 			tg.runFor((int)c);
 			//System.out.println(c);
 		}
@@ -52,8 +49,5 @@ enum RunMode {
 	}
 	void workDone(TimingGenerator tg) {}	// called when worker thread has completed work
 	void timerFired(TimingGenerator tg) {}	// called when animation timer fires
-	void teardown(TimingGenerator tg) {	// called before new mode is set, do any cleanup
-		System.out.println("Ran " + tg.cyclesDone + " cycles in " + tg.elapsed / 1e9 + " seconds.");
-		System.out.println("  That's " + tg.cyclesDone * 1e9 / tg.elapsed + " cycles per second.");
-	}
+	void teardown(TimingGenerator tg) {}	// called before new mode is set, do any cleanup
 }
