@@ -55,12 +55,12 @@ public class TimingGenerator extends AnimationTimer {
 		context.fillText(String.format("Long term: %d cycles\t%.3f seconds\t%.9fMHz",
 				cyclesDone, elapsed / 1e9, cyclesDone * 1e3 / elapsed), 40, 40);
 	}
-	void setMode(RunMode m) {
+/*	void setMode(RunMode m) {
 		if (m != RunMode.STEP && mode == m) return;	// If old and new are the same, we only care if it's a step
 		mode.teardown(this);
 		mode = m;
 		mode.setup(this);
-	}
+	}*/
 	public HBox getButtons() {
 		return buttons;
 	}
