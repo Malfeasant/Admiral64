@@ -11,20 +11,17 @@ enum RunMode {
 		}
 	},
 	REAL(">") {
-		@Override
+/*		@Override
 		void setup(TimingGenerator tg) {
 			super.setup(tg);
 			tg.runFor(tg.targetCycles);	// Have to guess for first batch, otherwise rate adjust divides by 0.
-		}
+		}*/
 		@Override
 		void timerFired(TimingGenerator tg) {
-			double targetRate = tg.osc.cyclesPerSecond;
-			double actualRate = tg.cyclesDone * 1e9 / tg.elapsed;
-			double slip = targetRate / actualRate;
-			tg.targetCycles *= slip;
-			tg.runFor(tg.targetCycles);
-			System.out.println("Actual: " + actualRate + "\tTarget: " + targetRate);
-			System.out.println("Slip is " + slip + "\tRunning for " + tg.targetCycles + " cycles.");
+			long c = ((tg.interval + tg.remainder) * tg.osc.cycles) / (tg.osc.seconds * 1000000000L);	      //  34090909
+			tg.remainder = ((tg.interval + tg.remainder) * tg.osc.cycles) % (tg.osc.seconds * 1000000000L);   // 996250000
+			tg.runFor((int)c);
+			//System.out.println(c);
 		}
 	},
 	FAST(">>") {

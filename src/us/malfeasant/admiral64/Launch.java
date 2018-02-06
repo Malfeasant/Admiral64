@@ -28,7 +28,7 @@ public class Launch extends Application {
 		console.setTitle("Admiral 64");	// TODO: make title depend on machine config?
 		Canvas canvas = new Canvas(800, 600);
 		GraphicsContext gc = canvas.getGraphicsContext2D();
-		TimingGenerator tg = new TimingGenerator();
+		TimingGenerator tg = new TimingGenerator(gc);
 		tg.start();
 		VBox vbox = new VBox(canvas, tg.getButtons());
 		

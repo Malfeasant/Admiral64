@@ -3,7 +3,9 @@ package us.malfeasant.admiral64.timing;
 import javafx.animation.AnimationTimer;
 import javafx.application.Platform;
 import javafx.geometry.Pos;
+import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.layout.HBox;
+import javafx.scene.paint.Color;
 
 /**
  *	generates the timing events that keep the machine running.  Minimum options should be single CPU cycle,  
@@ -15,9 +17,10 @@ public class TimingGenerator extends AnimationTimer {
 	long elapsed;	// total time since arbitrary point
 	long interval;	// current frame's duration
 	long cyclesDone;	// total cycles run since arbitrary point
-	int targetCycles = 15000;	// cycles to run in next interval (only used for realtime)
+	long remainder;	// leftover time to run in next interval (only used for realtime)
 	private final HBox buttons = new HBox();
 	final Oscillator osc = Oscillator.NTSC;	// TODO: make this configurable
+	final GraphicsContext context;
 	
 	@Override
 	public void handle(long now) {
@@ -31,17 +34,26 @@ public class TimingGenerator extends AnimationTimer {
 		last = now;
 	}
 	
-	public TimingGenerator() {
+	public TimingGenerator(GraphicsContext gc) {
 		for (RunMode m : RunMode.values()) {
 			buttons.getChildren().add(m.makeButton(this));
 		}
 		buttons.setAlignment(Pos.CENTER);
+		context = gc;
 	}
 	
 	void runFor(int cycles) {
 		// TODO: Send message to worker thread
 		cyclesDone += cycles;
 		Platform.runLater(() -> mode.workDone(this));	// simulate a response from worker thread
+		
+		context.setFill(Color.GHOSTWHITE);
+		context.fillRect(0, 0, 800, 600);
+		context.setFill(Color.BLACK);
+		context.fillText("Ran " + cycles + " cycles in " + interval / 1e6 +
+				" milliseconds: " + cycles * 1e3 / interval + "MHz", 20, 20);
+		context.fillText("Long term: " + cyclesDone + " cycles in " + elapsed /
+				1e9 + " seconds: " + cyclesDone * 1e3 / elapsed + "MHz", 40, 40);
 	}
 	void setMode(RunMode m) {
 		if (m != RunMode.STEP && mode == m) return;	// If old and new are the same, we only care if it's a step
