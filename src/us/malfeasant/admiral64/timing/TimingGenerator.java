@@ -20,6 +20,8 @@ public class TimingGenerator extends AnimationTimer {
 	long remainder;	// leftover time to run in next interval (only used for realtime)
 	private final HBox buttons = new HBox();
 	final Oscillator osc = Oscillator.NTSC;	// TODO: make this configurable
+	final Powerline pow = Powerline.NA;	// TODO: same
+	final ClockMode clockMode = ClockMode.PROPORTIONAL;	// TODO: ditto
 	final GraphicsContext context;
 	
 	@Override
