@@ -9,7 +9,7 @@ enum RunMode {
 			if (tg.mode == this) {	// Already in step mode, run a step
 				tg.runFor(1);
 			} else {	// Changing from another mode, 
-				changeMode(tg, this);
+				super.modeClicked(tg);
 			}
 		}
 	},
@@ -43,18 +43,18 @@ enum RunMode {
 	}
 	protected void modeClicked(TimingGenerator tg) {
 		if (tg.mode != this) {
-			changeMode(tg, this);
+			changeMode(tg);
 		}
 	}
-	private static void changeMode(TimingGenerator tg, RunMode to) {
+	private void changeMode(TimingGenerator tg) {
 		tg.mode.teardown(tg);	// tear down old mode
-		tg.mode = to;
-		to.setup(tg);
+		tg.mode = this;
+		setup(tg);
 	}
 	protected void setup(TimingGenerator tg) {}	// called when mode is set, do any necessary preparation
 	protected void workDone(TimingGenerator tg) {}	// called when worker thread has completed work
 	protected void timerFired(TimingGenerator tg) {}	// called when animation timer fires
-	protected void teardown(TimingGenerator tg) {	// called before new mode is set, do any cleanup
+	private void teardown(TimingGenerator tg) {	// called before new mode is set, do any cleanup
 		// reset cycles per second fields
 		tg.elapsed = 0;
 		tg.cyclesDone = 0;
