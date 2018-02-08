@@ -18,6 +18,9 @@ public class TimingGenerator extends AnimationTimer {
 	long interval;	// current frame's duration
 	long cyclesDone;	// total cycles run since arbitrary point
 	long remainder;	// leftover time to run in next interval (only used for realtime)
+	long pwrCycles;	//	Total number of power cycles (used to tick CIAs' RTC)
+	long pwrRemainder;	// remainder from above calculation
+	
 	private final HBox buttons = new HBox();
 	final Oscillator osc = Oscillator.NTSC;	// TODO: make this configurable
 	final Powerline pow = Powerline.NA;	// TODO: same
@@ -55,6 +58,8 @@ public class TimingGenerator extends AnimationTimer {
 				cycles, interval / 1e6, cycles * 1e3 / interval), 20, 20);
 		context.fillText(String.format("Long term: %d cycles\t%.3f seconds\t%.9fMHz",
 				cyclesDone, elapsed / 1e9, cyclesDone * 1e3 / elapsed), 40, 40);
+		context.fillText(String.format("Powerline: %d cycles\t%.3f seconds\t%.9fHz",
+				cyclesDone, elapsed / 1e9, cyclesDone * 1e3 / elapsed), 20, 60);
 	}
 	public HBox getButtons() {
 		return buttons;
