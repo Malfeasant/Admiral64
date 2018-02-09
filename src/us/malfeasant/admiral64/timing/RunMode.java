@@ -58,5 +58,6 @@ enum RunMode {
 		// reset cycles per second fields
 		tg.elapsed = 0;
 		tg.cyclesDone = 0;
+		tg.pwrCycles = 0;
 	}
 }
