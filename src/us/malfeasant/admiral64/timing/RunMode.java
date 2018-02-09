@@ -16,8 +16,8 @@ enum RunMode {
 	REAL(">") {
 		@Override
 		protected void timerFired(TimingGenerator tg) {
-			long c = (tg.interval * tg.osc.cycles + tg.remainder) / (tg.osc.seconds * 1000000000L);
-			tg.remainder = (tg.interval * tg.osc.cycles + tg.remainder) % (tg.osc.seconds * 1000000000L);
+			long c = (tg.interval * tg.osc.cycles + tg.cycleRem) / (tg.osc.seconds * 1000000000L);
+			tg.cycleRem = (tg.interval * tg.osc.cycles + tg.cycleRem) % (tg.osc.seconds * 1000000000L);
 			tg.runFor((int)c);
 		}
 	},
@@ -58,6 +58,6 @@ enum RunMode {
 		// reset cycles per second fields
 		tg.elapsed = 0;
 		tg.cyclesDone = 0;
-		tg.pwrCycles = 0;
+		tg.ticksDone = 0;
 	}
 }

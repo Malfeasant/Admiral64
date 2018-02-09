@@ -13,14 +13,17 @@ import javafx.scene.paint.Color;
  */
 public class TimingGenerator extends AnimationTimer {
 	RunMode mode = RunMode.STEP;
-	long last;	// last frame time
+	// Most of these must be longs because AnimationTimer timestamp is in nanoseconds, which would overflow
+	// an int in 2 seconds.  Even cpu cycles would overflow in 34 minutes.  Ticks would go over a year, but
+	// running at high speed could conceivably reach that in sim time...
+	long last;	// last frame timestamp
 	long elapsed;	// total time since arbitrary point
 	long interval;	// current frame's duration
 	long cyclesDone;	// total cycles run since arbitrary point
-	long remainder;	// leftover time to run in next interval (only used for realtime)
+	long cycleRem;	// leftover time to run in next interval (only used for realtime)
 	final int cyclesPerTick;	// integer part of how many cpu cycles per RTC tick
-	long pwrCycles;	//	Total number of power cycles (used to tick CIAs' RTC)
-	int pwrRemainder;	// remainder from above calculation
+	long ticksDone;	//	Total number of power cycles (used to tick CIAs' RTC)
+	int tickRem;	// remainder from above calculation
 	
 	private final HBox buttons = new HBox();
 	final Oscillator osc = Oscillator.NTSC;	// TODO: make this configurable
@@ -49,8 +52,8 @@ public class TimingGenerator extends AnimationTimer {
 	}
 	
 	void runFor(int cycles) {
-		pwrCycles += (cycles + pwrRemainder) / cyclesPerTick;
-		pwrRemainder = (cycles + pwrRemainder) % cyclesPerTick;
+		ticksDone += (cycles + tickRem) / cyclesPerTick;
+		tickRem = (cycles + tickRem) % cyclesPerTick;
 		// TODO: Send message to worker thread
 		cyclesDone += cycles;
 		Platform.runLater(() -> mode.workDone(this));	// simulate a response from worker thread
@@ -63,7 +66,7 @@ public class TimingGenerator extends AnimationTimer {
 		context.fillText(String.format("Long term: %d cycles\t%.3f seconds\t%.9fMHz",
 				cyclesDone, elapsed / 1e9, cyclesDone * 1e3 / elapsed), 40, 40);
 		context.fillText(String.format("Powerline: %d cycles\t%.3f seconds\t%.9fHz",
-				pwrCycles, elapsed / 1e9, pwrCycles * 1e9 / elapsed), 20, 60);
+				ticksDone, elapsed / 1e9, ticksDone * 1e9 / elapsed), 20, 60);
 	}
 	public HBox getButtons() {
 		return buttons;
