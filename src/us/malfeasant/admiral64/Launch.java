@@ -42,15 +42,17 @@ public class Launch extends Application {
 		tg.cyclesProperty().addListener(new InvalidationListener() {
 			@Override
 			public void invalidated(Observable observable) {
-				cycles.setText(String.format("%d cycles in %d seconds: %.9fMHz",
-						tg.getCycles(), tg.getElapsed() / 1000000000, tg.getCycles() * 1e3 / tg.getElapsed() ));
+				if (tg.getElapsed() > 0) // Avoid ugly divide by zero
+					cycles.setText(String.format("%d cycles in %d seconds: %.9fMHz",
+							tg.getCycles(), tg.getElapsed() / 1000000000, tg.getCycles() * 1e3 / tg.getElapsed() ));
 			}
 		});
 		tg.ticksProperty().addListener(new InvalidationListener() {
 			@Override
 			public void invalidated(Observable observable) {
-				ticks.setText(String.format("%d ticks in %d seconds: %.3fHz",
-						tg.getTicks(), tg.getElapsed() / 1000000000, tg.getTicks() * 1e9 / tg.getElapsed() ));
+				if (tg.getElapsed() > 0) 
+					ticks.setText(String.format("%d ticks in %d seconds: %.3fHz",
+							tg.getTicks(), tg.getElapsed() / 1000000000, tg.getTicks() * 1e9 / tg.getElapsed() ));
 			}
 		});
 		VBox status = new VBox(cycles, ticks);
