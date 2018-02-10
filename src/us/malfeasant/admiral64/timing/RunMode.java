@@ -56,8 +56,8 @@ enum RunMode {
 	protected void timerFired(TimingGenerator tg) {}	// called when animation timer fires
 	private void teardown(TimingGenerator tg) {	// called before new mode is set, do any cleanup
 		// reset cycles per second fields
-		tg.elapsed = 0;
-		tg.cyclesDone = 0;
-		tg.ticksDone = 0;
+		tg.elapsed.set(0);
+		tg.cyclesDone.set(0);
+		tg.ticksDone.set(0);
 	}
 }
