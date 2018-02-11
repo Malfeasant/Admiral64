@@ -24,11 +24,11 @@ enum RunMode {
 	FAST(">>") {
 		@Override
 		protected void setup(TimingGenerator tg) {
-			tg.runFor(tg.osc.cycles);	// run first batch, further batches will be run after work comes back
+			tg.runFor(10000);	// run first batch, further batches will be run after work comes back
 		}
 		@Override
 		protected void workDone(TimingGenerator tg) {
-			tg.runFor(tg.osc.cycles);
+			tg.runFor(10000);
 		}
 	};
 	RunMode(String butText) {

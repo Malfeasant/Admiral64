@@ -65,8 +65,7 @@ public class TimingGenerator extends AnimationTimer {
 		ticksDone.set(ticksDone.get() + ticks);
 		tickRem = (cycles + tickRem) % cyclesPerTick;
 		cyclesDone.set(cyclesDone.get() + cycles);
-		workQueue.add(String.format("Cycles: %d", cycles));
-		workQueue.add(String.format("Ticks: %d", ticks));
+		workQueue.add(String.format("Cycles: %d, Ticks: %d", cycles, ticks));
 	}
 	public Node getButtons() {
 		return buttons;
