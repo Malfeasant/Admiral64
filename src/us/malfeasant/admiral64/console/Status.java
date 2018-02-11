@@ -35,4 +35,10 @@ public class Status {
 	public Node getNode() {
 		return node;
 	}
+
+	@Override
+	protected void finalize() throws Throwable {
+		System.out.println("Status was garbage collected.");
+		super.finalize();
+	}
 }
