@@ -21,12 +21,13 @@ public class Simulation {
 	private volatile boolean alive;
 	
 	final Thread thread;
+	final Status status;	// have to keep this or this object gets garbage collected, which causes its bindings to break.
 	
 	public Simulation(Configuration conf) {
 		config = conf;
 		workQueue = new LinkedTransferQueue<>();
 		timingGen = new TimingGenerator(config.oscillator, config.powerline, workQueue);
-		Status status = new Status();
+		status = new Status();
 		status.cyclesProperty().bind(timingGen.cyclesProperty());
 		status.ticksProperty().bind(timingGen.ticksProperty());
 		status.elapsedProperty().bind(timingGen.elapsedProperty());
