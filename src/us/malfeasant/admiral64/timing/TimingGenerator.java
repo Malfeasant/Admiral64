@@ -1,10 +1,12 @@
 package us.malfeasant.admiral64.timing;
 
+import java.util.concurrent.BlockingQueue;
+
 import javafx.animation.AnimationTimer;
-import javafx.application.Platform;
 import javafx.beans.property.ReadOnlyLongProperty;
 import javafx.beans.property.ReadOnlyLongWrapper;
 import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.layout.HBox;
 
 /**
@@ -29,19 +31,22 @@ public class TimingGenerator extends AnimationTimer {
 	final Oscillator osc;
 	final Powerline pow;
 	
+	private final BlockingQueue<Object> workQueue;
+	
 	@Override
 	public void handle(long now) {
 		if (last > 0) {	// not first run
 			interval = now - last;
 			elapsed.set(elapsed.get() + interval);
 			mode.timerFired(this);
+			
 			// TODO: Render worker thread results to screen
-			// TODO: if realtime, compute # of cycles to request from worker thread
 		}	// skip first run
 		last = now;
 	}
 	
-	public TimingGenerator(Oscillator o, Powerline p) {
+	public TimingGenerator(Oscillator o, Powerline p, BlockingQueue<Object> work) {
+		workQueue = work;
 		osc = o;
 		pow = p;
 		cyclesPerTick = osc.cycles / (osc.seconds * pow.cycles);	// Integer is accurate enough
@@ -51,14 +56,19 @@ public class TimingGenerator extends AnimationTimer {
 		buttons.setAlignment(Pos.CENTER);
 	}
 	
-	void runFor(int cycles) {
-		ticksDone.set(ticksDone.get() + (cycles + tickRem) / cyclesPerTick);
-		tickRem = (cycles + tickRem) % cyclesPerTick;
-		// TODO: Send message to worker thread
-		cyclesDone.set(cyclesDone.get() + cycles);
-		Platform.runLater(() -> mode.workDone(this));	// simulate a response from worker thread
+	public void workDone() {
+		mode.workDone(this);
 	}
-	public HBox getButtons() {
+	
+	void runFor(int cycles) {
+		long ticks = (cycles + tickRem) / cyclesPerTick;	// TODO: fire each tick between appropriate cycles
+		ticksDone.set(ticksDone.get() + ticks);
+		tickRem = (cycles + tickRem) % cyclesPerTick;
+		cyclesDone.set(cyclesDone.get() + cycles);
+		workQueue.add(String.format("Cycles: %d", cycles));
+		workQueue.add(String.format("Ticks: %d", ticks));
+	}
+	public Node getButtons() {
 		return buttons;
 	}
 	public ReadOnlyLongProperty elapsedProperty() { return elapsed.getReadOnlyProperty(); }
