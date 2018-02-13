@@ -61,11 +61,25 @@ public class TimingGenerator extends AnimationTimer {
 	}
 	
 	void runFor(int cycles) {
-		long ticks = (cycles + tickRem) / cyclesPerTick;	// TODO: fire each tick between appropriate cycles
-		ticksDone.set(ticksDone.get() + ticks);
-		tickRem = (cycles + tickRem) % cyclesPerTick;
+		int cyclesNow = cycles - tickRem;
+		// run cyclesNow cycles
+		cyclesDone.set(cyclesDone.get() + cyclesNow);
+		cycles -= cyclesNow;
+		tickRem = 0;
+		
+		while (cycles >= cyclesPerTick) {
+			// run cyclesPerTick cycles
+			cyclesDone.set(cyclesDone.get() + cyclesPerTick);
+			cycles -= cyclesPerTick;
+			// run 1 tick
+			ticksDone.set(ticksDone.get() + 1);
+		}
+		
+		// run remaining cycles
 		cyclesDone.set(cyclesDone.get() + cycles);
-		workQueue.add(String.format("Cycles: %d, Ticks: %d", cycles, ticks));
+		tickRem = cyclesPerTick - cycles;
+		
+		workQueue.add("Done");
 	}
 	public Node getButtons() {
 		return buttons;
