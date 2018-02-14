@@ -29,12 +29,6 @@ public class WorkQueue {
 			// TODO: measure performance, may make sense to maintain a cache of common counts
 			queue.add(new Request(Type.CYCLES, cycles));
 		}
-		/**
-		 *	This isn't really necessary for the work itself, but so fast mode doesn't stack up work exponentially
-		 */
-		public void done() {
-			queue.add(Request.DONE);
-		}
 	}
 	/**
 	 *	Intended to be given to the worker thread
@@ -44,6 +38,9 @@ public class WorkQueue {
 		public Request receive() throws InterruptedException {
 			return queue.take();
 		}
+		/**
+		 *	This isn't really necessary for the work itself, but so fast mode doesn't stack up work exponentially
+		 */
 		public void ack() {
 			Platform.runLater(() -> ack.run());
 		}

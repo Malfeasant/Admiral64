@@ -31,6 +31,7 @@ public class TimingGenerator extends AnimationTimer {
 	final Powerline pow;
 	
 	private final WorkQueue.WorkSender workSender;
+	private int workOutstanding = 0;
 	
 	@Override
 	public void handle(long now) {
@@ -59,37 +60,42 @@ public class TimingGenerator extends AnimationTimer {
 	 *	Intended to be called by the worker thread
 	 */
 	public void workDone() {
-		mode.workDone(this);
+		workOutstanding--;
+		if (workOutstanding < 1) mode.workDone(this);
 	}
 	
 	void runFor(int cycles) {
 		if (tickRem + cycles < cyclesPerTick) {
-			// run cycles cycles
+			workOutstanding++;
+			workSender.requestCycles(cycles);
 			cyclesDone.set(cyclesDone.get() + cycles);
 			tickRem += cycles;
 		} else {
-			// run cyclesPerTick - tickRem cycles
+			workOutstanding++;
+			workSender.requestCycles(cyclesPerTick - tickRem);
 			cyclesDone.set(cyclesDone.get() + cyclesPerTick - tickRem);
 			cycles -= (cyclesPerTick - tickRem);
-			// run 1 tick
+			workOutstanding++;
+			workSender.requestTick();
 			ticksDone.set(ticksDone.get() + 1);
 			
 			while (cycles >= cyclesPerTick) {
-				// run cyclesPerTick cycles
+				workOutstanding++;
+				workSender.requestCycles(cyclesPerTick);
 				cyclesDone.set(cyclesDone.get() + cyclesPerTick);
 				cycles -= cyclesPerTick;
-				// run 1 tick
+				workOutstanding++;
+				workSender.requestTick();
 				ticksDone.set(ticksDone.get() + 1);
 			}
 			
 			if (cycles > 0) {
-				// run remaining cycles
+				workOutstanding++;
+				workSender.requestCycles(cycles);
 				cyclesDone.set(cyclesDone.get() + cycles);
 			}
 			tickRem = cycles;
 		}
-		
-		workSender.done();
 	}
 	public Node getButtons() {
 		return buttons;

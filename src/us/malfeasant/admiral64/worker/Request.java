@@ -2,7 +2,7 @@ package us.malfeasant.admiral64.worker;
 
 public class Request {
 	public enum Type {
-		TICK, CYCLES, DONE;
+		TICK, CYCLES;
 	}
 	final int count;
 	final Type type;
@@ -11,5 +11,4 @@ public class Request {
 		type = t;
 	}
 	static Request TICK = new Request(Type.TICK, 1);
-	static Request DONE = new Request(Type.DONE, -1);
 }

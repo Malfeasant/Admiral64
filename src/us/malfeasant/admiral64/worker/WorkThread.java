@@ -11,7 +11,7 @@ public class WorkThread {
 				try {
 					Request rq = r.receive();
 					// TODO: do some real work
-					if (rq.type.equals(Request.Type.DONE)) r.ack();
+					r.ack();
 				} catch (InterruptedException e) {
 					if (!alive) return;
 				}
