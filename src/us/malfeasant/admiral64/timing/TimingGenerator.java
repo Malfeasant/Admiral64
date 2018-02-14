@@ -1,13 +1,12 @@
 package us.malfeasant.admiral64.timing;
 
-import java.util.concurrent.BlockingQueue;
-
 import javafx.animation.AnimationTimer;
 import javafx.beans.property.ReadOnlyLongProperty;
 import javafx.beans.property.ReadOnlyLongWrapper;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.layout.HBox;
+import us.malfeasant.admiral64.worker.WorkQueue;
 
 /**
  *	generates the timing events that keep the machine running.  Minimum options should be single CPU cycle,  
@@ -31,7 +30,7 @@ public class TimingGenerator extends AnimationTimer {
 	final Oscillator osc;
 	final Powerline pow;
 	
-	private final BlockingQueue<Object> workQueue;
+	private final WorkQueue.WorkSender workSender;
 	
 	@Override
 	public void handle(long now) {
@@ -45,8 +44,8 @@ public class TimingGenerator extends AnimationTimer {
 		last = now;
 	}
 	
-	public TimingGenerator(Oscillator o, Powerline p, BlockingQueue<Object> work) {
-		workQueue = work;
+	public TimingGenerator(Oscillator o, Powerline p, WorkQueue.WorkSender s) {
+		workSender = s;
 		osc = o;
 		pow = p;
 		cyclesPerTick = osc.cycles / (osc.seconds * pow.cycles);	// Integer is accurate enough
@@ -56,6 +55,9 @@ public class TimingGenerator extends AnimationTimer {
 		buttons.setAlignment(Pos.CENTER);
 	}
 	
+	/**
+	 *	Intended to be called by the worker thread
+	 */
 	public void workDone() {
 		mode.workDone(this);
 	}
@@ -87,7 +89,7 @@ public class TimingGenerator extends AnimationTimer {
 			tickRem = cycles;
 		}
 		
-		workQueue.add("Done");
+		workSender.done();
 	}
 	public Node getButtons() {
 		return buttons;

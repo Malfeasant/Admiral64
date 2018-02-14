@@ -1,12 +1,10 @@
 package us.malfeasant.admiral64;
 
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedTransferQueue;
-
-import javafx.application.Platform;
 import us.malfeasant.admiral64.console.Console;
 import us.malfeasant.admiral64.console.Status;
 import us.malfeasant.admiral64.timing.TimingGenerator;
+import us.malfeasant.admiral64.worker.WorkQueue;
+import us.malfeasant.admiral64.worker.WorkThread;
 
 /**
  *	Encompasses an entire simulation, including front end UI bits and back end work bits, and code to bridge them
@@ -17,16 +15,14 @@ public class Simulation {
 	private final TimingGenerator timingGen;
 	private final Console console;
 	
-	private final BlockingQueue<Object> workQueue;	// TODO: make more specific
-	private volatile boolean alive;
-	
-	final Thread thread;
+	final WorkThread worker;
 	final Status status;	// have to keep this or this object gets garbage collected, which causes its bindings to break.
 	
 	public Simulation(Configuration conf) {
 		config = conf;
-		workQueue = new LinkedTransferQueue<>();
-		timingGen = new TimingGenerator(config.oscillator, config.powerline, workQueue);
+		WorkQueue queue = new WorkQueue(() -> ack());
+		worker = new WorkThread(queue.getReceiver());
+		timingGen = new TimingGenerator(config.oscillator, config.powerline, queue.getSender());
 		status = new Status();
 		status.cyclesProperty().bind(timingGen.cyclesProperty());
 		status.ticksProperty().bind(timingGen.ticksProperty());
@@ -34,26 +30,16 @@ public class Simulation {
 		timingGen.cyclesProperty().get();	// and throw it away
 		timingGen.ticksProperty().get();	// ditto
 		// Otherwise they never get invalidated because they're never valid to begin with... joy.
-		thread = new Thread(() -> {
-			alive = true;
-			while (alive) {
-				try {
-					workQueue.take();	// TODO: do some real work
-					Platform.runLater(() -> timingGen.workDone());
-				} catch (InterruptedException e) {
-					if (!alive) return;
-				}
-			}
-		});
-		thread.start();
 		timingGen.start();
+		worker.start();
 		
 		console = new Console(conf.name, timingGen.getButtons(), status.getNode());
 		console.setOnCloseRequest((event) -> {
 			// TODO: Dialog- allow saving some state, cancel.  For now, just kill the sim.
-			alive = false;
-			thread.interrupt();
-			System.out.println("Worker thread should be dead.");
+			worker.die();
 		});
+	}
+	private void ack() {
+		timingGen.workDone();
 	}
 }
