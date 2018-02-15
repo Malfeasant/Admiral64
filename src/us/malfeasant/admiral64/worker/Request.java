@@ -1,7 +1,7 @@
 package us.malfeasant.admiral64.worker;
 
 public class Request {
-	public enum Type {
+	enum Type {
 		TICK, CYCLES;
 	}
 	final int count;

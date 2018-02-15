@@ -33,15 +33,15 @@ public class WorkQueue {
 	/**
 	 *	Intended to be given to the worker thread
 	 */
-	public class WorkReceiver {
+	class WorkReceiver {
 		private WorkReceiver() {}	// Only WorkQueue should be able to construct
-		public Request receive() throws InterruptedException {
+		Request receive() throws InterruptedException {
 			return queue.take();
 		}
 		/**
 		 *	This isn't really necessary for the work itself, but so fast mode doesn't stack up work exponentially
 		 */
-		public void ack() {
+		void ack() {
 			Platform.runLater(() -> ack.run());
 		}
 	}
