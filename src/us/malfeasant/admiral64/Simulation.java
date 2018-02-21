@@ -4,7 +4,6 @@ import us.malfeasant.admiral64.console.Console;
 import us.malfeasant.admiral64.console.Status;
 import us.malfeasant.admiral64.machine.Machine;
 import us.malfeasant.admiral64.timing.TimingGenerator;
-import us.malfeasant.admiral64.worker.VideoOut;
 import us.malfeasant.admiral64.worker.WorkQueue;
 import us.malfeasant.admiral64.worker.WorkThread;
 
@@ -22,8 +21,7 @@ public class Simulation {
 	
 	public Simulation(Configuration conf) {
 		config = conf;
-		VideoOut vOut = new VideoOut();
-		machine = new Machine(conf, vOut);
+		machine = new Machine(conf);
 		WorkQueue queue = new WorkQueue(() -> ack());
 		worker = new WorkThread(queue.getReceiver(), machine);
 		timingGen = new TimingGenerator(config.oscillator, config.powerline, queue.getSender());
@@ -40,10 +38,10 @@ public class Simulation {
 			// TODO: Dialog- allow saving some state, cancel.  For now, just kill the sim.
 			worker.die();
 		});
-		vOut.setWriter(console.getWriter());
-		
+		machine.connectVideo(console);
 		timingGen.start();
 		worker.start();
+		console.start();
 	}
 	private void ack() {
 		timingGen.workDone();

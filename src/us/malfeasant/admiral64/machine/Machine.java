@@ -1,8 +1,10 @@
 package us.malfeasant.admiral64.machine;
 
+import java.util.function.Consumer;
+
 import us.malfeasant.admiral64.Configuration;
 import us.malfeasant.admiral64.machine.vic.Vic;
-import us.malfeasant.admiral64.worker.VideoOut;
+import us.malfeasant.admiral64.machine.vic.VideoEvent;
 
 /**
  *	This class will encompass the entire simulation, minus the gui bits and thread management.  Ideally, it shouldn't
@@ -11,8 +13,12 @@ import us.malfeasant.admiral64.worker.VideoOut;
 public class Machine {
 	private final Vic vic;
 	
-	public Machine(Configuration conf, VideoOut vOut) {
-		vic = new Vic(conf.vicFlavor, vOut);
+	public Machine(Configuration conf) {
+		vic = new Vic(conf.vicFlavor);
+	}
+	
+	public void connectVideo(Consumer<VideoEvent> v) {
+		vic.connectVideo(v);
 	}
 	
 	/**
