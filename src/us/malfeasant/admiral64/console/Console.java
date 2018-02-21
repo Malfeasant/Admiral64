@@ -19,6 +19,7 @@ import us.malfeasant.admiral64.machine.vic.VideoEvent;
 
 public class Console extends AnimationTimer implements Consumer<VideoEvent> {
 	private final Stage window;
+	private final Canvas canvas;
 	private final GraphicsContext context;
 	private final WritableImage image;
 	private final PixelWriter pixelWriter;
@@ -49,9 +50,11 @@ public class Console extends AnimationTimer implements Consumer<VideoEvent> {
 		window = new Stage();
 		window.setTitle(title);
 		
-		Canvas canvas = new Canvas(800, 600);
+		canvas = new Canvas();
 		context = canvas.getGraphicsContext2D();
 		VBox vbox = new VBox(canvas, buttons);
+		canvas.widthProperty().bind(vbox.widthProperty());
+		canvas.heightProperty().bind(vbox.widthProperty().multiply(0.75));
 		
 		buffer = new byte[312][520];
 		image = new WritableImage(520, 312);	// TODO: match Vic dimensions
@@ -76,7 +79,7 @@ public class Console extends AnimationTimer implements Consumer<VideoEvent> {
 				}
 			}
 		}
-		context.drawImage(image, 0, 0);
+		context.drawImage(image, 0, 0, canvas.getWidth(), canvas.getHeight());
 	}
 	
 	/**
