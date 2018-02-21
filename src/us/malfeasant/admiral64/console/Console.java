@@ -3,6 +3,8 @@ package us.malfeasant.admiral64.console;
 import java.util.function.Consumer;
 
 import javafx.animation.AnimationTimer;
+import javafx.beans.InvalidationListener;
+import javafx.beans.Observable;
 import javafx.event.EventHandler;
 import javafx.scene.Node;
 import javafx.scene.Scene;
@@ -11,7 +13,6 @@ import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.PixelWriter;
 import javafx.scene.image.WritableImage;
 import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
@@ -52,17 +53,29 @@ public class Console extends AnimationTimer implements Consumer<VideoEvent> {
 		
 		canvas = new Canvas();
 		context = canvas.getGraphicsContext2D();
-		VBox vbox = new VBox(canvas, buttons);
-		canvas.widthProperty().bind(vbox.widthProperty());
-		canvas.heightProperty().bind(vbox.widthProperty().multiply(0.75));
 		
 		buffer = new byte[312][520];
 		image = new WritableImage(520, 312);	// TODO: match Vic dimensions
 		pixelWriter = image.getPixelWriter();
 		
-		BorderPane root = new BorderPane(vbox);
-		root.setBottom(status);
+		BorderPane root = new BorderPane(canvas);
+		root.setBottom(buttons);
 		window.setScene(new Scene(root));
+		InvalidationListener listener = new InvalidationListener() {
+			@Override
+			public void invalidated(Observable observable) {
+				window.getWidth(); window.getHeight();	// make bindings valid
+				double width = Math.min(window.getWidth(),
+						(window.getHeight() * 1.33333) - buttons.getLayoutBounds().getHeight());
+				double height = Math.min(window.getHeight() - buttons.getLayoutBounds().getHeight(),
+						window.getWidth() * 0.75);
+				canvas.setWidth(width);
+				canvas.setHeight(height);
+				System.out.println("Setting width: " + Math.round(width) + "\theight: " + Math.round(height));
+			}
+		};
+		window.widthProperty().addListener(listener);
+		window.heightProperty().addListener(listener);
 		window.show();
 	}
 	
