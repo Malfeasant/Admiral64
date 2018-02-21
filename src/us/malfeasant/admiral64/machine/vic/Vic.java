@@ -32,13 +32,15 @@ public class Vic {
 		if (rasterCycle > 64) {
 			rasterCycle = 0;
 			rasterLine++;
-			out = VideoEvent.HSYNC;
+			videoOut.accept(VideoEvent.HSYNC);
 			if (rasterLine > 310) {
 				rasterLine = 0;
-				out = VideoEvent.VSYNC;
+				videoOut.accept(VideoEvent.VSYNC);
 			}
+			return;	// otherwise sends it 8 times...
+		} else {
+			for (int i = 0; i < 8; i++) videoOut.accept(out);
 		}
-		videoOut.accept(out);
 	}
 	
 	public void connectVideo(Consumer<VideoEvent> v) {

@@ -29,20 +29,20 @@ public class Console extends AnimationTimer implements Consumer<VideoEvent> {
 	
 	private static final Color[] palette = {
 		Color.BLACK, Color.WHITE, 
-		Color.hsb(360*4/16.0, 1, 10/32.0),	// Red
-		Color.hsb(360*12/16.0, 1, 20/32.0),	// Cyan
-		Color.hsb(360*2/16.0, 1, 12/32.0),	// Purple
-		Color.hsb(360*10/16.0, 1, 16/32.0),	// Green
-		Color.hsb(360*15/16.0, 1, 8/32.0),	// Blue
-		Color.hsb(360*7/16.0, 1, 24/32.0),	// Yellow
-		Color.hsb(360*5/16.0, 1, 12/32.0),	// Orange
-		Color.hsb(360*6/16.0, 1, 8/32.0),	// Brown
-		Color.hsb(360*4/16.0, 1, 16/32.0),	// Lt. Red
-		Color.gray(10/32.0),	// Dark Gray
-		Color.gray(15/32.0),	// Med. Gray
-		Color.hsb(360*10/16.0, 1, 24/32.0),	// Lt. Green
-		Color.hsb(360*15/16.0, 1, 15/32.0),	// Lt. Blue
-		Color.gray(20/32.0) 	// Lt. Gray
+		Color.web("813338"),	// Red
+		Color.web("75cec8"),	// Cyan
+		Color.web("8e3c97"),	// Purple
+		Color.web("56ac4d"),	// Green
+		Color.web("2e2c9b"),	// Blue
+		Color.web("edf171"),	// Yellow
+		Color.web("8e5029"),	// Orange
+		Color.web("553800"),	// Brown
+		Color.web("c46c71"),	// Lt. Red
+		Color.web("4a4a4a"),	// Dark Gray
+		Color.web("7b7b7b"),	// Med. Gray
+		Color.web("a9ff9f"),	// Lt. Green
+		Color.web("706deb"),	// Lt. Blue
+		Color.web("b2b2b2") 	// Lt. Gray
 	};
 	
 	public Console(String title, Node buttons, Node status) {
@@ -72,7 +72,7 @@ public class Console extends AnimationTimer implements Consumer<VideoEvent> {
 		synchronized (buffer) {
 			for (int line = 0; line < buffer.length; line++) {
 				for (int pixel = 0; pixel < buffer[line].length; pixel++) {
-					pixelWriter.setColor(pixel, line, palette[buffer[y][x]]);
+					pixelWriter.setColor(pixel, line, palette[buffer[line][pixel]]);
 				}
 			}
 		}
