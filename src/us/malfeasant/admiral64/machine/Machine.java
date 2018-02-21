@@ -9,11 +9,9 @@ import us.malfeasant.admiral64.worker.VideoOut;
  *	care what thread runs it, assuming it's one, and shouldn't care whether its gui is JavaFX or Swing or something else.
  */
 public class Machine {
-	private final Configuration configuration;
 	private final Vic vic;
 	
 	public Machine(Configuration conf, VideoOut vOut) {
-		configuration = conf;
 		vic = new Vic(conf.vicFlavor, vOut);
 	}
 	
