@@ -1,6 +1,8 @@
 package us.malfeasant.admiral64.machine;
 
 import us.malfeasant.admiral64.Configuration;
+import us.malfeasant.admiral64.machine.vic.Vic;
+import us.malfeasant.admiral64.worker.VideoOut;
 
 /**
  *	This class will encompass the entire simulation, minus the gui bits and thread management.  Ideally, it shouldn't
@@ -8,9 +10,11 @@ import us.malfeasant.admiral64.Configuration;
  */
 public class Machine {
 	private final Configuration configuration;
+	private final Vic vic;
 	
-	public Machine(Configuration conf) {
+	public Machine(Configuration conf, VideoOut vOut) {
 		configuration = conf;
+		vic = new Vic(conf.vicFlavor, vOut);
 	}
 	
 	/**
@@ -21,9 +25,11 @@ public class Machine {
 	}
 	
 	/**
-	 *	Run a θ2 cycle
+	 *	Run some θ2 cycles
 	 */
-	public void cycle() {
-		
+	public void cycle(int times) {
+		for (int i = 0; i < times; i++) {
+			vic.cycle();
+		}
 	}
 }

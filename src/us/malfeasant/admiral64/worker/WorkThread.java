@@ -19,9 +19,7 @@ public class WorkThread {
 						machine.tick();
 						break;
 					case CYCLES:
-						for (int i=0; i<rq.count; i++) {
-							machine.cycle();
-						}
+						machine.cycle(rq.count);
 						break;
 					}
 					r.ack();

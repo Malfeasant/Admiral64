@@ -4,6 +4,7 @@ import us.malfeasant.admiral64.console.Console;
 import us.malfeasant.admiral64.console.Status;
 import us.malfeasant.admiral64.machine.Machine;
 import us.malfeasant.admiral64.timing.TimingGenerator;
+import us.malfeasant.admiral64.worker.VideoOut;
 import us.malfeasant.admiral64.worker.WorkQueue;
 import us.malfeasant.admiral64.worker.WorkThread;
 
@@ -21,7 +22,8 @@ public class Simulation {
 	
 	public Simulation(Configuration conf) {
 		config = conf;
-		machine = new Machine(conf);
+		VideoOut vOut = new VideoOut();
+		machine = new Machine(conf, vOut);
 		WorkQueue queue = new WorkQueue(() -> ack());
 		worker = new WorkThread(queue.getReceiver(), machine);
 		timingGen = new TimingGenerator(config.oscillator, config.powerline, queue.getSender());
@@ -32,14 +34,16 @@ public class Simulation {
 		timingGen.cyclesProperty().get();	// and throw it away
 		timingGen.ticksProperty().get();	// ditto
 		// Otherwise they never get invalidated because they're never valid to begin with... joy.
-		timingGen.start();
-		worker.start();
 		
 		console = new Console(conf.name, timingGen.getButtons(), status.getNode());
 		console.setOnCloseRequest((event) -> {
 			// TODO: Dialog- allow saving some state, cancel.  For now, just kill the sim.
 			worker.die();
 		});
+		vOut.setWriter(console.getWriter());
+		
+		timingGen.start();
+		worker.start();
 	}
 	private void ack() {
 		timingGen.workDone();
