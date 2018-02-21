@@ -1,6 +1,5 @@
 package us.malfeasant.admiral64.worker;
 
-import javafx.application.Platform;
 import javafx.scene.image.PixelWriter;
 import javafx.scene.paint.Color;
 
