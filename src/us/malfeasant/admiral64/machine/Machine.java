@@ -4,7 +4,7 @@ import java.util.function.Consumer;
 
 import us.malfeasant.admiral64.Configuration;
 import us.malfeasant.admiral64.machine.vic.Vic;
-import us.malfeasant.admiral64.machine.vic.VideoEvent;
+import us.malfeasant.admiral64.machine.vic.Pixels;
 
 /**
  *	This class will encompass the entire simulation, minus the gui bits and thread management.  Ideally, it shouldn't
@@ -17,7 +17,7 @@ public class Machine {
 		vic = new Vic(conf.vicFlavor);
 	}
 	
-	public void connectVideo(Consumer<VideoEvent> v) {
+	public void connectVideo(Consumer<Pixels> v) {
 		vic.connectVideo(v);
 	}
 	

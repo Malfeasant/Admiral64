@@ -16,18 +16,14 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
-import us.malfeasant.admiral64.machine.vic.VideoEvent;
+import us.malfeasant.admiral64.machine.vic.Pixels;
 
-public class Console extends AnimationTimer implements Consumer<VideoEvent> {
+public class Console extends AnimationTimer implements Consumer<Pixels> {
 	private final Stage window;
 	private final Canvas canvas;
 	private final GraphicsContext context;
 	private final WritableImage image;
 	private final PixelWriter pixelWriter;
-	
-	private final byte[][] buffer;
-	private int x;
-	private int y;
 	
 	private static final Color[] palette = {
 		Color.BLACK, Color.WHITE, 
@@ -54,7 +50,6 @@ public class Console extends AnimationTimer implements Consumer<VideoEvent> {
 		canvas = new Canvas();
 		context = canvas.getGraphicsContext2D();
 		
-		buffer = new byte[312][520];
 		image = new WritableImage(520, 312);	// TODO: match Vic dimensions
 		pixelWriter = image.getPixelWriter();
 		
@@ -85,33 +80,19 @@ public class Console extends AnimationTimer implements Consumer<VideoEvent> {
 	
 	@Override
 	public void handle(long now) {
-		synchronized (buffer) {
-			for (int line = 0; line < buffer.length; line++) {
-				for (int pixel = 0; pixel < buffer[line].length; pixel++) {
-					pixelWriter.setColor(pixel, line, palette[buffer[line][pixel]]);
-				}
-			}
+		synchronized (image) {
+			context.drawImage(image, 0, 0, canvas.getWidth(), canvas.getHeight());
 		}
-		context.drawImage(image, 0, 0, canvas.getWidth(), canvas.getHeight());
 	}
 	
 	/**
 	 *	This will be called from the worker thread
 	 */
 	@Override
-	public void accept(VideoEvent t) {
-		synchronized (buffer) {
-			switch (t) {
-			case HSYNC:
-				x = 0;
-				y++;
-				break;
-			case VSYNC:
-				y = 0;
-				break;
-			default:
-				buffer[y][x] = (byte) t.ordinal();
-				x++;
+	public void accept(Pixels bar) {
+		synchronized (image) {
+			for (int x=0; x<8; x++) {
+				pixelWriter.setColor(bar.column * 8 + x, bar.line, palette[(bar.pixels >> (7 - x) * 4) & 0xf]);
 			}
 		}
 	}

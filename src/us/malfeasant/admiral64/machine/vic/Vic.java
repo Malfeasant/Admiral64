@@ -8,7 +8,7 @@ public class Vic {
 	}
 	private final Flavor flavor;
 	
-	private Consumer<VideoEvent> videoOut;
+	private Consumer<Pixels> videoOut;
 	
 	private boolean hBorder;
 	private boolean vBorder;
@@ -27,23 +27,10 @@ public class Vic {
 		flavor = f;
 	}
 	public void cycle() {
-		VideoEvent out = VideoEvent.values()[rasterCycle / 8];
-		rasterCycle++;
-		if (rasterCycle > 64) {
-			rasterCycle = 0;
-			rasterLine++;
-			videoOut.accept(VideoEvent.HSYNC);
-			if (rasterLine > 310) {
-				rasterLine = 0;
-				videoOut.accept(VideoEvent.VSYNC);
-			}
-			return;	// otherwise sends it 8 times...
-		} else {
-			for (int i = 0; i < 8; i++) videoOut.accept(out);
-		}
+		
 	}
 	
-	public void connectVideo(Consumer<VideoEvent> v) {
+	public void connectVideo(Consumer<Pixels> v) {
 		videoOut = v;
 	}
 }
