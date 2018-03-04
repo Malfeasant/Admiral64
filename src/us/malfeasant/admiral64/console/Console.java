@@ -66,7 +66,7 @@ public class Console extends AnimationTimer implements Consumer<Pixels> {
 						window.getWidth() * 0.75);
 				canvas.setWidth(width);
 				canvas.setHeight(height);
-				System.out.println("Setting width: " + Math.round(width) + "\theight: " + Math.round(height));
+//				System.out.println("Setting width: " + Math.round(width) + "\theight: " + Math.round(height));
 			}
 		};
 		window.widthProperty().addListener(listener);
@@ -81,12 +81,16 @@ public class Console extends AnimationTimer implements Consumer<Pixels> {
 	@Override
 	public void handle(long now) {
 		synchronized (image) {
-			context.drawImage(image, 0, 0, canvas.getWidth(), canvas.getHeight());
+			context.drawImage(image,
+					0, 41, 376, 220,
+					0, 0, canvas.getWidth(), canvas.getHeight());
 		}
 	}
 	
 	/**
 	 *	This will be called from the worker thread
+	 *	TODO: measure performance, compare with sticking stuff into a queue then dumping it out all at once
+	 *	in the handle() method
 	 */
 	@Override
 	public void accept(Pixels bar) {
