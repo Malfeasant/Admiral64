@@ -117,7 +117,6 @@ public class Vic {
 			pixels |= (pixel << (7-x) * 4);
 		}
 		if (!vBlank && !hBlank) {
-			//videoOut.accept(Pixels.factory((rasterCycle + 3) % 65, rasterLine, pixels));	// TODO from config
 			videoOut.accept(Pixels.factory(rasterCycle, rasterLine, pixels));
 		}
 	}

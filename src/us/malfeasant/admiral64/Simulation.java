@@ -1,7 +1,10 @@
 package us.malfeasant.admiral64;
 
+import javafx.beans.binding.Bindings;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Alert.AlertType;
+import javafx.stage.Modality;
 import us.malfeasant.admiral64.console.Console;
-import us.malfeasant.admiral64.console.Status;
 import us.malfeasant.admiral64.machine.Machine;
 import us.malfeasant.admiral64.timing.TimingGenerator;
 import us.malfeasant.admiral64.worker.WorkQueue;
@@ -17,7 +20,6 @@ public class Simulation {
 	private final Console console;
 	private final Machine machine;
 	private final WorkThread worker;
-	private final Status status;	// have to keep this or this object gets garbage collected, which causes its bindings to break.
 	
 	public Simulation(Configuration conf) {
 		config = conf;
@@ -25,15 +27,20 @@ public class Simulation {
 		WorkQueue queue = new WorkQueue(() -> ack());
 		worker = new WorkThread(queue.getReceiver(), machine);
 		timingGen = new TimingGenerator(config.oscillator, config.powerline, queue.getSender());
-		status = new Status();
-		status.cyclesProperty().bind(timingGen.cyclesProperty());
-		status.ticksProperty().bind(timingGen.ticksProperty());
-		status.elapsedProperty().bind(timingGen.elapsedProperty());
 		timingGen.cyclesProperty().get();	// and throw it away
 		timingGen.ticksProperty().get();	// ditto
 		// Otherwise they never get invalidated because they're never valid to begin with... joy.
+		Alert alert = new Alert(AlertType.INFORMATION);
+		alert.initModality(Modality.NONE);
+		alert.setTitle("Clock monitor");
+		alert.setHeaderText("");
+		alert.contentTextProperty().bind(Bindings.format("%d cycles in %d seconds: %.9fMHz",
+				timingGen.cyclesProperty(),
+				timingGen.elapsedProperty().divide(1000000000),
+				timingGen.cyclesProperty().multiply(1e3).divide(timingGen.elapsedProperty())));
+		alert.show();
 		
-		console = new Console(conf.name, timingGen.getButtons(), status.getNode());
+		console = new Console(conf.name, timingGen.getButtons());
 		console.setOnCloseRequest((event) -> {
 			// TODO: Dialog- allow saving some state, cancel.  For now, just kill the sim.
 			worker.die();

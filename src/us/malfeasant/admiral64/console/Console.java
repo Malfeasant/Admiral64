@@ -43,7 +43,7 @@ public class Console extends AnimationTimer implements Consumer<Pixels> {
 		Color.web("b2b2b2") 	// Lt. Gray
 	};
 	
-	public Console(String title, Node buttons, Node status) {
+	public Console(String title, Node buttons) {
 		window = new Stage();
 		window.setTitle(title);
 		
