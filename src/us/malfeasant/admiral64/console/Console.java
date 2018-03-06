@@ -5,11 +5,15 @@ import java.util.function.Consumer;
 import javafx.animation.AnimationTimer;
 import javafx.beans.InvalidationListener;
 import javafx.beans.Observable;
+import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.control.Menu;
+import javafx.scene.control.MenuBar;
+import javafx.scene.control.MenuItem;
 import javafx.scene.image.PixelWriter;
 import javafx.scene.image.WritableImage;
 import javafx.scene.layout.BorderPane;
@@ -24,6 +28,8 @@ public class Console extends AnimationTimer implements Consumer<Pixels> {
 	private final GraphicsContext context;
 	private final WritableImage image;
 	private final PixelWriter pixelWriter;
+	private final BorderPane root;
+	private final MenuItem showTiming;
 	
 	private static final Color[] palette = {
 		Color.BLACK, Color.WHITE, 
@@ -43,7 +49,7 @@ public class Console extends AnimationTimer implements Consumer<Pixels> {
 		Color.web("b2b2b2") 	// Lt. Gray
 	};
 	
-	public Console(String title, Node buttons) {
+	public Console(String title) {
 		window = new Stage();
 		window.setTitle(title);
 		
@@ -53,27 +59,41 @@ public class Console extends AnimationTimer implements Consumer<Pixels> {
 		image = new WritableImage(520, 312);	// TODO: match Vic dimensions
 		pixelWriter = image.getPixelWriter();
 		
-		BorderPane root = new BorderPane(canvas);
-		root.setBottom(buttons);
+		root = new BorderPane(canvas);
 		window.setScene(new Scene(root));
 		InvalidationListener listener = new InvalidationListener() {
 			@Override
 			public void invalidated(Observable observable) {
 				window.getWidth(); window.getHeight();	// make bindings valid
 				double width = Math.min(window.getWidth(),
-						(window.getHeight() * 1.33333) - buttons.getLayoutBounds().getHeight());
-				double height = Math.min(window.getHeight() - buttons.getLayoutBounds().getHeight(),
+						(window.getHeight() * 1.33333));
+				double height = Math.min(window.getHeight(),
 						window.getWidth() * 0.75);
 				canvas.setWidth(width);
 				canvas.setHeight(height);
 //				System.out.println("Setting width: " + Math.round(width) + "\theight: " + Math.round(height));
 			}
 		};
+		
+		showTiming = new MenuItem("Show timing...");
+		Menu debugMenu = new Menu("Debug");
+		debugMenu.getItems().add(showTiming);
+		MenuBar bar = new MenuBar();
+		bar.getMenus().add(debugMenu);
+		root.setTop(bar);
+		
 		window.widthProperty().addListener(listener);
 		window.heightProperty().addListener(listener);
 		window.show();
 	}
 	
+	public void addTimingMonitorMenuHandler(EventHandler<ActionEvent> eventHandler) {
+		showTiming.addEventHandler(ActionEvent.ACTION, eventHandler);
+	}
+	
+	public void setBottom(Node n) {
+		root.setBottom(n);
+	}
 	public void setOnCloseRequest(EventHandler<WindowEvent> e) {
 		window.setOnCloseRequest(e);
 	}

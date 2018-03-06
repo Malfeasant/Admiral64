@@ -20,6 +20,7 @@ public class Simulation {
 	private final Console console;
 	private final Machine machine;
 	private final WorkThread worker;
+	private final Alert timingMonitor;
 	
 	public Simulation(Configuration conf) {
 		config = conf;
@@ -30,21 +31,29 @@ public class Simulation {
 		timingGen.cyclesProperty().get();	// and throw it away
 		timingGen.ticksProperty().get();	// ditto
 		// Otherwise they never get invalidated because they're never valid to begin with... joy.
-		Alert alert = new Alert(AlertType.INFORMATION);
-		alert.initModality(Modality.NONE);
-		alert.setTitle("Clock monitor");
-		alert.setHeaderText("");
-		alert.contentTextProperty().bind(Bindings.format("%d cycles in %d seconds: %.9fMHz",
+		timingMonitor = new Alert(AlertType.INFORMATION);
+		timingMonitor.initModality(Modality.NONE);
+		timingMonitor.setTitle("Timing monitor");
+		timingMonitor.setHeaderText("");
+		timingMonitor.contentTextProperty().bind(Bindings.format(
+				"%d cycles in %d seconds: %.9fMHz\n%d ticks in %d seconds: %.3fHz",
 				timingGen.cyclesProperty(),
 				timingGen.elapsedProperty().divide(1000000000),
-				timingGen.cyclesProperty().multiply(1e3).divide(timingGen.elapsedProperty())));
-		alert.show();
+				timingGen.cyclesProperty().multiply(1e3).divide(timingGen.elapsedProperty()),
+				timingGen.ticksProperty(),
+				timingGen.elapsedProperty().divide(1000000000),
+				timingGen.ticksProperty().multiply(1e9).divide(timingGen.elapsedProperty())));
 		
-		console = new Console(conf.name, timingGen.getButtons());
+		console = new Console(conf.name);
+		console.setBottom(timingGen.getButtons());
 		console.setOnCloseRequest((event) -> {
 			// TODO: Dialog- allow saving some state, cancel.  For now, just kill the sim.
 			worker.die();
 		});
+		
+		// would be much easier with binding, but it's read only
+		console.addTimingMonitorMenuHandler((event) -> timingMonitor.show());
+		
 		machine.connectVideo(console);
 		timingGen.start();
 		worker.start();
