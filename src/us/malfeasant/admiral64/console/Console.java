@@ -102,7 +102,7 @@ public class Console extends AnimationTimer implements Consumer<Pixels> {
 	public void handle(long now) {
 		synchronized (image) {
 			context.drawImage(image,
-					0, 41, 376, 220,
+					0, 41, 384, 220,
 					0, 0, canvas.getWidth(), canvas.getHeight());
 		}
 	}
@@ -116,7 +116,7 @@ public class Console extends AnimationTimer implements Consumer<Pixels> {
 	public void accept(Pixels bar) {
 		synchronized (image) {
 			for (int x=0; x<8; x++) {
-				pixelWriter.setColor(bar.column * 8 + x, bar.line, palette[(bar.pixels >> (7 - x) * 4) & 0xf]);
+				pixelWriter.setColor(bar.column * 8 + x, bar.line, palette[(bar.reader.getColorAt(x))]);
 			}
 		}
 	}

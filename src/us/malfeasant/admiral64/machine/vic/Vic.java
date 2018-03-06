@@ -26,8 +26,8 @@ public class Vic {
 	private int rasterCycle;
 	private int rasterLine;
 	
-	private int borderColor = 0xe;
-	private int backColor = 0x6;	// TODO: there are actually 4 background registers...
+	private byte borderColor = 0xe;
+	private byte backColor = 0x6;	// TODO: there are actually 4 background registers...
 	
 	public Vic(Flavor f) {
 		flavor = f;
@@ -35,9 +35,9 @@ public class Vic {
 	
 	public void cycle() {
 		rasterCycle++;
-		int pixels = 0;
+		Pixels.Builder pixels = new Pixels.Builder();
 		for (int x = 0; x < 8; x++) {
-			int pixel = 0;
+			byte pixel = 0;
 			switch (rasterCycle * 8 + x) {
 /*			case 416:
 				hSync = true;
@@ -114,10 +114,10 @@ public class Vic {
 					pixel = backColor;
 				}
 			}
-			pixels |= (pixel << (7-x) * 4);
+			pixels.setColorAt(x, pixel);
 		}
 		if (!vBlank && !hBlank) {
-			videoOut.accept(Pixels.factory(rasterCycle, rasterLine, pixels));
+			videoOut.accept(pixels.build(rasterCycle, rasterLine));
 		}
 	}
 	
