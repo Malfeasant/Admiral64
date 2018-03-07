@@ -27,7 +27,6 @@ import us.malfeasant.admiral64.machine.vic.Pixels;
 public class Console extends AnimationTimer implements Consumer<Pixels> {
 	private final Stage window;
 	private final ImageView canvas;
-	//private final GraphicsContext context;
 	private final WritableImage image;
 	private final PixelWriter pixelWriter;
 	private final BorderPane root;
