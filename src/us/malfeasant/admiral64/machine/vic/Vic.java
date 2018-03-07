@@ -26,8 +26,8 @@ public class Vic {
 	private int rasterCycle;
 	private int rasterLine;
 	
-	private byte borderColor = 0xe;
-	private byte backColor = 0x6;	// TODO: there are actually 4 background registers...
+	private int borderColor = 0xe;
+	private int backColor = 0x6;	// TODO: there are actually 4 background registers...
 	
 	public Vic(Flavor f) {
 		flavor = f;
@@ -37,7 +37,7 @@ public class Vic {
 		rasterCycle++;
 		Pixels.Builder pixels = new Pixels.Builder();
 		for (int x = 0; x < 8; x++) {
-			byte pixel = 0;
+			int pixel = 0;
 			switch (rasterCycle * 8 + x) {
 /*			case 416:
 				hSync = true;

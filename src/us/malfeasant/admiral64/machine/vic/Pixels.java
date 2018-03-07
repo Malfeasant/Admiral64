@@ -19,10 +19,10 @@ public class Pixels {
 	public static class Builder {
 		private final byte[] pixels = new byte[8];
 		
-		public void setColorAt(int position, byte color) {
+		public void setColorAt(int position, int color) {
 			assert color == (color & 0xf) : "Pixels: color out of range.";
 			assert position >= 0 && position < 8 : "Pixels: x out of range.";
-			pixels[position] = color;
+			pixels[position] = (byte) color;
 		}
 		
 		public Pixels build(int column, int line) {
