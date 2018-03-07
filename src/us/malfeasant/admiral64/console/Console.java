@@ -1,19 +1,21 @@
 package us.malfeasant.admiral64.console;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.function.Consumer;
 
 import javafx.animation.AnimationTimer;
-import javafx.beans.InvalidationListener;
-import javafx.beans.Observable;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
+import javafx.geometry.Rectangle2D;
 import javafx.scene.Node;
 import javafx.scene.Scene;
-import javafx.scene.canvas.Canvas;
-import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
+import javafx.scene.image.ImageView;
 import javafx.scene.image.PixelWriter;
 import javafx.scene.image.WritableImage;
 import javafx.scene.layout.BorderPane;
@@ -24,12 +26,13 @@ import us.malfeasant.admiral64.machine.vic.Pixels;
 
 public class Console extends AnimationTimer implements Consumer<Pixels> {
 	private final Stage window;
-	private final Canvas canvas;
-	private final GraphicsContext context;
+	private final ImageView canvas;
+	//private final GraphicsContext context;
 	private final WritableImage image;
 	private final PixelWriter pixelWriter;
 	private final BorderPane root;
 	private final MenuItem showTiming;
+	private final BlockingQueue<Pixels> queue = new LinkedBlockingQueue<>();
 	
 	private static final Color[] palette = {
 		Color.BLACK, Color.WHITE, 
@@ -53,27 +56,15 @@ public class Console extends AnimationTimer implements Consumer<Pixels> {
 		window = new Stage();
 		window.setTitle(title);
 		
-		canvas = new Canvas();
-		context = canvas.getGraphicsContext2D();
-		
 		image = new WritableImage(520, 312);	// TODO: match Vic dimensions
 		pixelWriter = image.getPixelWriter();
+		canvas = new ImageView(image);
+		canvas.setViewport(new Rectangle2D(0, 41, 384, 220));
+		canvas.fitWidthProperty().bind(window.widthProperty());
+		canvas.fitHeightProperty().bind(window.widthProperty().multiply(.75));
 		
 		root = new BorderPane(canvas);
 		window.setScene(new Scene(root));
-		InvalidationListener listener = new InvalidationListener() {
-			@Override
-			public void invalidated(Observable observable) {
-				window.getWidth(); window.getHeight();	// make bindings valid
-				double width = Math.min(window.getWidth(),
-						(window.getHeight() * 1.33333));
-				double height = Math.min(window.getHeight(),
-						window.getWidth() * 0.75);
-				canvas.setWidth(width);
-				canvas.setHeight(height);
-//				System.out.println("Setting width: " + Math.round(width) + "\theight: " + Math.round(height));
-			}
-		};
 		
 		showTiming = new MenuItem("Show timing...");
 		Menu debugMenu = new Menu("Debug");
@@ -82,8 +73,6 @@ public class Console extends AnimationTimer implements Consumer<Pixels> {
 		bar.getMenus().add(debugMenu);
 		root.setTop(bar);
 		
-		window.widthProperty().addListener(listener);
-		window.heightProperty().addListener(listener);
 		window.show();
 	}
 	
@@ -100,24 +89,21 @@ public class Console extends AnimationTimer implements Consumer<Pixels> {
 	
 	@Override
 	public void handle(long now) {
-		synchronized (image) {
-			context.drawImage(image,
-					0, 41, 384, 220,
-					0, 0, canvas.getWidth(), canvas.getHeight());
+		List<Pixels> pixelList = new ArrayList<>();
+		queue.drainTo(pixelList);
+		for (Pixels p : pixelList) {
+			for (int x=0; x<8; x++) {
+				pixelWriter.setColor(p.column * 8 + x, p.line, palette[(p.reader.getColorAt(x))]);
+			}
 		}
 	}
 	
 	/**
 	 *	This will be called from the worker thread
-	 *	TODO: measure performance, compare with sticking stuff into a queue then dumping it out all at once
-	 *	in the handle() method
 	 */
 	@Override
 	public void accept(Pixels bar) {
-		synchronized (image) {
-			for (int x=0; x<8; x++) {
-				pixelWriter.setColor(bar.column * 8 + x, bar.line, palette[(bar.reader.getColorAt(x))]);
-			}
-		}
+		boolean success = queue.offer(bar);	// queue is unbounded, so shouldn't ever fail
+		assert success : "Pixel queue apparently full.";
 	}
 }
