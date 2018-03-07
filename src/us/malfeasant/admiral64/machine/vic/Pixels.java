@@ -21,7 +21,7 @@ public class Pixels {
 		
 		public void setColorAt(int position, int color) {
 			assert color == (color & 0xf) : "Pixels: color out of range.";
-			assert position >= 0 && position < 8 : "Pixels: x out of range.";
+			assert position == (position & 7) : "Pixels: x out of range.";
 			pixels[position] = (byte) color;
 		}
 		
