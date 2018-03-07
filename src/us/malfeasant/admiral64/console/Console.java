@@ -57,10 +57,8 @@ public class Console extends AnimationTimer implements Consumer<Pixels> {
 		
 		image = new WritableImage(520, 312);	// TODO: match Vic dimensions
 		pixelWriter = image.getPixelWriter();
-		canvas = new ImageView(image);
-		canvas.setViewport(new Rectangle2D(0, 41, 384, 220));
-		canvas.fitWidthProperty().bind(window.widthProperty());
-		canvas.fitHeightProperty().bind(window.widthProperty().multiply(.75));
+		canvas = new ImageViewWrapper(image);
+		canvas.setViewport(new Rectangle2D(0, 41, 376, 220));
 		
 		root = new BorderPane(canvas);
 		window.setScene(new Scene(root));
