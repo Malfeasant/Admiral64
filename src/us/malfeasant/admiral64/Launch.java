@@ -10,7 +10,7 @@ public class Launch extends Application {
 		// The primaryStage will someday be used for a VirtualBox-like machine configurator / chooser.
 		// For now, it stays hidden and opens a new stage to display a basic machine.
 		primaryStage.setTitle("Placeholder");
-		new Simulation(new Configuration());	// TODO: accept config as arg
+		new Simulation(Configuration.Quick.NEW_NTSC.getConfig("Admiral64"));	// TODO: accept config as arg
 	}
 
 	public static void main(String[] args) {
