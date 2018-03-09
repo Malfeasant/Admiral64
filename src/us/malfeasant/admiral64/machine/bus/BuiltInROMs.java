@@ -14,7 +14,7 @@ public enum BuiltInROMs {
 	private final int abits;
 	
 	private BuiltInROMs(String fn, int b) {
-		filename = fn;
+		filename = "ROMs/" + fn;
 		abits = b;
 	}
 	private BuiltInROMs(String fn) {
@@ -22,7 +22,8 @@ public enum BuiltInROMs {
 	}
 	
 	public ROM load() throws IOException {
-		InputStream is = Thread.currentThread().getContextClassLoader().getResourceAsStream(filename);
+		InputStream is = getClass().getClassLoader().getResourceAsStream(filename);
+		assert is != null : "ROM \"" + filename + "\" failed to load.";
 		byte[] bytes = new byte[2 ^ abits];
 		is.read(bytes);
 		return new ROM(abits, bytes);
