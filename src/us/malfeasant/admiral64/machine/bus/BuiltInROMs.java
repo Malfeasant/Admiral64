@@ -14,7 +14,7 @@ public enum BuiltInROMs {
 	private final int abits;
 	
 	private BuiltInROMs(String fn, int b) {
-		filename = "ROMs/" + fn;
+		filename = fn;
 		abits = b;
 	}
 	private BuiltInROMs(String fn) {
