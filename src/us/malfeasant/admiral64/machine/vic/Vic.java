@@ -4,7 +4,13 @@ import java.util.function.Consumer;
 
 public class Vic {
 	public enum Flavor {
-		MOS6567R56A, MOS6567R8, MOS6569;
+		MOS6567R56A(64, 262), MOS6567R8(65, 263), MOS6569(63, 312);
+		private final int cyclesPerLine;
+		private final int linesPerField;
+		Flavor(int cpl, int lpf) {
+			cyclesPerLine = cpl;
+			linesPerField = lpf;
+		}
 	}
 	private final Flavor flavor;
 	
@@ -16,12 +22,6 @@ public class Vic {
 	private boolean hBorder;
 	private boolean vBorder;
 	private boolean dispEnable = true;
-	
-//	private boolean hSync;
-//	private boolean vSync;
-	
-	private boolean hBlank;
-	private boolean vBlank;
 	
 	private int rasterCycle;
 	private int rasterLine;
@@ -39,17 +39,7 @@ public class Vic {
 		for (int x = 0; x < 8; x++) {
 			int pixel = 0;
 			switch (rasterCycle * 8 + x) {
-/*			case 416:
-				hSync = true;
-				break;
-			case 452:
-				hSync = false;
-				break;
-*/			case 396:
-				hBlank = true;
-				break;
-			case 496:
-				hBlank = false;
+/*			case 496:
 				// ba for char fetch
 				break;
 			case 35:
@@ -61,7 +51,7 @@ public class Vic {
 			case 339:
 				// if (!csel) hBorder = true;
 				break;
-			case 28:
+*/			case 28:
 				// if csel
 				hBorder = false;
 				if (rasterLine == vBottom) vBorder = true;
@@ -99,26 +89,16 @@ public class Vic {
 				case 262:
 					rasterLine = 0;
 					break;
-/*				case 17:
-					vSync = true;
-					break;
-				case 20:
-					vSync = false;
-					break;
-*/				}
-			}
-			if (!vBlank && !hBlank) {	// otherwise nothing displays
-				if (vBorder || hBorder) {
-					pixel = borderColor;
-				} else {
-					pixel = backColor;
 				}
+			}
+			if (vBorder || hBorder) {
+				pixel = borderColor;
+			} else {
+				pixel = backColor;
 			}
 			pixels.setColorAt(x, pixel);
 		}
-		if (!vBlank && !hBlank) {
-			videoOut.accept(pixels.build(rasterCycle, rasterLine));
-		}
+		videoOut.accept(pixels.build(rasterCycle, rasterLine));
 	}
 	
 	public void connectVideo(Consumer<Pixels> v) {
