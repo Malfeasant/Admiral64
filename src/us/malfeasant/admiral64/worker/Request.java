@@ -2,7 +2,7 @@ package us.malfeasant.admiral64.worker;
 
 public class Request {
 	enum Type {
-		TICK, CYCLES;
+		RTC, OSC;
 	}
 	final int count;
 	final Type type;
@@ -10,5 +10,6 @@ public class Request {
 		count = c;
 		type = t;
 	}
-	static Request TICK = new Request(Type.TICK, 1);
+	static final Request RTCTICK = new Request(Type.RTC, 1);
+	static final Request OSCBURST = new Request(Type.OSC, 0x4000);	// At realtime, around 60 bursts per second
 }

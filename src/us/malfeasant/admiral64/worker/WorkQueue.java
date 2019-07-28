@@ -23,11 +23,14 @@ public class WorkQueue {
 	public class WorkSender {
 		private WorkSender() {}	// Only WorkQueue should be able to construct
 		public void requestTick() {
-			queue.add(Request.TICK);	// throws exception if full- since it's a linked queue, that shouldn't happen.
+			queue.add(Request.RTCTICK);	// throws exception if full- since it's a linked queue, that shouldn't happen.
 		}
 		public void requestCycles(int cycles) {
 			// TODO: measure performance, may make sense to maintain a cache of common counts
-			queue.add(new Request(Type.CYCLES, cycles));
+			queue.add(new Request(Type.OSC, cycles));
+		}
+		public void requestBurst() {	// Runs a set number of CPU/VIC cycles
+			queue.add(Request.OSCBURST);
 		}
 	}
 	/**

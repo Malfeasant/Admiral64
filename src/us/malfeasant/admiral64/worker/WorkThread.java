@@ -15,10 +15,10 @@ public class WorkThread {
 				try {
 					Request rq = r.receive();
 					switch (rq.type) {
-					case TICK:
+					case RTC:
 						machine.tick();
 						break;
-					case CYCLES:
+					case OSC:
 						machine.cycle(rq.count);
 						break;
 					}
