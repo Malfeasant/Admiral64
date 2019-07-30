@@ -13,7 +13,7 @@ import us.malfeasant.admiral64.worker.WorkQueue;
  *	realtime, or uninhibited.  
  */
 public class TimingGenerator extends AnimationTimer {
-	RunMode mode = RunMode.STEP;
+	RunMode mode = RunMode.getDefault();
 	// Most of these must be longs because AnimationTimer timestamp is in nanoseconds, which would overflow
 	// an int in 2 seconds.  Even cpu cycles would overflow in 34 minutes.  Ticks would go over a year, but
 	// running at high speed could conceivably reach that in sim time...
@@ -63,7 +63,7 @@ public class TimingGenerator extends AnimationTimer {
 		workOutstanding--;
 		if (workOutstanding < 1) mode.workDone(this);
 	}
-	
+	/*
 	void runFor(int cycles) {
 		if (tickRem + cycles < cyclesPerTick) {
 			workOutstanding++;
@@ -96,7 +96,7 @@ public class TimingGenerator extends AnimationTimer {
 			}
 			tickRem = cycles;
 		}
-	}
+	}*/
 	public Node getButtons() {
 		return buttons;
 	}

@@ -25,7 +25,7 @@ public class Simulation {
 	public Simulation(Configuration conf) {
 		config = conf;
 		machine = new Machine(conf);
-		WorkQueue queue = new WorkQueue(() -> ack());
+		WorkQueue queue = new WorkQueue();
 		worker = new WorkThread(queue.getReceiver(), machine);
 		timingGen = new TimingGenerator(config.oscillator, config.powerline, queue.getSender());
 		timingGen.cyclesProperty().get();	// and throw it away
@@ -58,8 +58,5 @@ public class Simulation {
 		timingGen.start();
 		worker.start();
 		console.start();
-	}
-	private void ack() {
-		timingGen.workDone();
 	}
 }
