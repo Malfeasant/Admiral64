@@ -1,6 +1,5 @@
 package us.malfeasant.admiral64.timing;
 
-import javafx.animation.AnimationTimer;
 import javafx.beans.property.ReadOnlyLongProperty;
 import javafx.beans.property.ReadOnlyLongWrapper;
 import javafx.geometry.Pos;
@@ -10,12 +9,12 @@ import us.malfeasant.admiral64.worker.WorkQueue;
 
 /**
  *	generates the timing events that keep the machine running.  Minimum options should be single CPU cycle,  
- *	realtime, or uninhibited.  
+ *	realtime, or uninhibited. 
  */
-public class TimingGenerator extends AnimationTimer {
+public class TimingGenerator {
 	RunMode mode = RunMode.getDefault();
-	// Most of these must be longs because AnimationTimer timestamp is in nanoseconds, which would overflow
-	// an int in 2 seconds.  Even cpu cycles would overflow in 34 minutes.  Ticks would go over a year, but
+	// Most of these must be longs because timestamps in nanoseconds would overflow an int in 2 seconds.
+	// Even cpu cycles would overflow in 34 minutes.  RTC ticks could go over a year, but
 	// running at high speed could conceivably reach that in sim time...
 	long last;	// last frame timestamp
 	final ReadOnlyLongWrapper elapsed = new ReadOnlyLongWrapper();	// total time since arbitrary point
@@ -33,7 +32,7 @@ public class TimingGenerator extends AnimationTimer {
 	private final WorkQueue.WorkSender workSender;
 	private int workOutstanding = 0;
 	
-	@Override
+/*	@Override
 	public void handle(long now) {
 		if (last > 0) {	// not first run
 			interval = now - last;
@@ -44,7 +43,7 @@ public class TimingGenerator extends AnimationTimer {
 		}	// skip first run
 		last = now;
 	}
-	
+*/	
 	public TimingGenerator(Oscillator o, Powerline p, WorkQueue.WorkSender s) {
 		workSender = s;
 		osc = o;

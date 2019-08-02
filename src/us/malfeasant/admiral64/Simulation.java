@@ -55,7 +55,7 @@ public class Simulation {
 		console.addTimingMonitorMenuHandler((event) -> timingMonitor.show());
 		
 		machine.connectVideo(console);
-		timingGen.start();
+//		timingGen.start();
 		worker.start();
 		console.start();
 	}
