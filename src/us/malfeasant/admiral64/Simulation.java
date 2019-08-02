@@ -8,6 +8,7 @@ import us.malfeasant.admiral64.console.Console;
 import us.malfeasant.admiral64.machine.Machine;
 import us.malfeasant.admiral64.timing.TimingGenerator;
 import us.malfeasant.admiral64.worker.WorkQueue;
+import us.malfeasant.admiral64.worker.WorkQueue.WorkSender;
 import us.malfeasant.admiral64.worker.WorkThread;
 
 /**
@@ -20,14 +21,16 @@ public class Simulation {
 	private final Console console;
 	private final Machine machine;
 	private final WorkThread worker;
+	private final WorkSender sender;
 	private final Alert timingMonitor;
 	
 	public Simulation(Configuration conf) {
 		config = conf;
 		machine = new Machine(conf);
 		WorkQueue queue = new WorkQueue();
-		worker = new WorkThread(queue.getReceiver(), machine);
-		timingGen = new TimingGenerator(config.oscillator, config.powerline, queue.getSender());
+		sender = queue.getSender();
+		timingGen = new TimingGenerator(config.oscillator, config.powerline, machine, sender);
+		worker = new WorkThread(queue.getReceiver(), timingGen);
 		timingGen.cyclesProperty().get();	// and throw it away
 		timingGen.ticksProperty().get();	// ditto
 		// Otherwise they never get invalidated because they're never valid to begin with... joy.
