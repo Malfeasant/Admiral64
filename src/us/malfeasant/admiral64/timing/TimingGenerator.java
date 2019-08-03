@@ -26,7 +26,7 @@ public class TimingGenerator {
 	private final int cyclesPerTickRem;	// remainder of above
 	private final ReadOnlyLongWrapper ticksDone = new ReadOnlyLongWrapper();	//	Total number of power cycles (used to tick CIAs' RTC)
 	private int tickRem;	// remainder from above calculation
-	private RunMode mode;
+	private RunMode lastMode;
 	
 	private final HBox buttons = new HBox();
 	private final Oscillator osc;
@@ -51,13 +51,17 @@ public class TimingGenerator {
 		interval = last == 0 ? 1 : now - last;	// If first run, pretend interval is 1 ns, otherwise calculate
 		last = now;
 		long cycles = 0;
-		// TODO figure out how many cycles to run, then how long/if sleep before returning
+		if (lastMode != mode) {
+			last = 0;	// Force fps to recalculate
+			lastMode = mode;
+		}
 		switch (mode) {
 		case STEP:
 			cycles = 1;
 			System.out.println("Taking a step");
 			break;
 		case REAL:
+			// TODO figure out how many cycles to run, then how long/if sleep before returning
 			cycles = 1000;	// TODO not really
 			System.out.println("Realtime");
 			try {
