@@ -55,7 +55,10 @@ public class Simulation {
 		});
 		
 		// would be much easier with binding, but it's read only
-		console.addTimingMonitorMenuHandler((event) -> timingMonitor.show());
+		console.addTimingMonitorMenuHandler((event) -> {
+			timingGen.reset();	// start from a zero count
+			timingMonitor.show();
+		});
 		
 		machine.connectVideo(console);
 //		timingGen.start();

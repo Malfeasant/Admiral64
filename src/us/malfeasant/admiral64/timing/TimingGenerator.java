@@ -88,6 +88,11 @@ public class TimingGenerator {
 			wrapper.set(wrapper.get() + num);
 		});
 	}
+	public void reset() {
+		cyclesDone.set(0);
+		ticksDone.set(0);
+		elapsed.set(0);
+	}
 	/*
 	void runFor(int cycles) {
 		if (tickRem + cycles < cyclesPerTick) {
