@@ -17,25 +17,26 @@ public class TimingGenerator {
 	// Most of these must be longs because timestamps in nanoseconds would overflow an int in 2 seconds.
 	// Even cpu cycles would overflow in 34 minutes.  RTC ticks could go over a year, but
 	// running at high speed could conceivably reach that in sim time...
-	long last;	// last frame timestamp
-	final ReadOnlyLongWrapper elapsed = new ReadOnlyLongWrapper();	// total time since arbitrary point
-	long interval;	// current frame's duration
-	final ReadOnlyLongWrapper cyclesDone = new ReadOnlyLongWrapper();	// total cycles run since arbitrary point
-	long cycleRem;	// leftover time to run in next interval (only used for realtime)
-	final int cyclesPerTick;	// integer part of how many cpu cycles per RTC tick
-	final ReadOnlyLongWrapper ticksDone = new ReadOnlyLongWrapper();	//	Total number of power cycles (used to tick CIAs' RTC)
-	int tickRem;	// remainder from above calculation
-	RunMode mode;
+	private long last;	// last frame timestamp
+	private final ReadOnlyLongWrapper elapsed = new ReadOnlyLongWrapper();	// total time since arbitrary point
+	private long interval;	// current frame's duration
+	private final ReadOnlyLongWrapper cyclesDone = new ReadOnlyLongWrapper();	// total cycles run since arbitrary point
+	private long cycleRem;	// leftover time to run in next interval (only used for realtime)
+	private final int cyclesPerTick;	// integer part of how many cpu cycles per RTC tick
+	private final int cyclesPerTickRem;	// remainder of above
+	private final ReadOnlyLongWrapper ticksDone = new ReadOnlyLongWrapper();	//	Total number of power cycles (used to tick CIAs' RTC)
+	private int tickRem;	// remainder from above calculation
+	private RunMode mode;
 	
 	private final HBox buttons = new HBox();
 	private final Oscillator osc;
 	private final Powerline pow;
-	private int workOutstanding = 0;
 	
 	public TimingGenerator(Oscillator o, Powerline p, Machine m, WorkQueue.WorkSender s) {
 		osc = o;
 		pow = p;
-		cyclesPerTick = osc.cycles / (osc.seconds * pow.cycles);	// TODO: make more accurate
+		cyclesPerTick = osc.cycles / (osc.seconds * pow.cycles);
+		cyclesPerTickRem = osc.cycles % (osc.seconds * pow.cycles);
 		for (RunMode mode : RunMode.values()) {
 			buttons.getChildren().add(mode.makeButton(e -> {
 				s.changeMode(mode);
@@ -44,21 +45,11 @@ public class TimingGenerator {
 		buttons.setAlignment(Pos.CENTER);
 	}
 	
-	/**
-	 *	Intended to be called by the worker thread
-	 */
-/*	public void workDone() {
-		workOutstanding--;
-		if (workOutstanding < 1) mode.workDone(this);
-	}
-*/	
 	// this will be called on the worker thread
 	public void run(RunMode mode) {
 		long now = System.nanoTime();
-		if (last == 0) {	// This is first run- do any setup
-			last = now;
-		}
-		interval = now - last;
+		interval = last == 0 ? 1 : now - last;	// If first run, pretend interval is 1 ns, otherwise calculate
+		last = now;
 		long cycles = 0;
 		// TODO figure out how many cycles to run, then how long/if sleep before returning
 		switch (mode) {
@@ -72,18 +63,22 @@ public class TimingGenerator {
 			try {
 				Thread.sleep(1000);
 			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				// Don't need to do anything
 			}
 			break;
 		case FAST:
-			cycles = 1000;	// TODO not really
-			//System.out.println("OMGOMGOMG");
+			cycles = 0x2000;	// TODO not really
+			try {
+				Thread.sleep(1);	// pretend to do some work
+			} catch (InterruptedException e) {
+				// Don't need to do anything
+			}
 			break;
 		}
 		propHelper(cyclesDone, cycles);
 		propHelper(elapsed, interval);
 	}
+	// Can't do this within the above method, because the number can't be final...
 	private void propHelper(ReadOnlyLongWrapper wrapper, long num) {
 		Platform.runLater(() -> {	// Pass to GUI thread
 			wrapper.set(wrapper.get() + num);
