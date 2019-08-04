@@ -24,15 +24,17 @@ public class TimingGenerator {
 	private long cycleRem;	// leftover time to run in next interval (only used for realtime)
 	private final int cyclesPerTick;	// integer part of how many cpu cycles per RTC tick
 	private final int cyclesPerTickRem;	// remainder of above
-	private final ReadOnlyLongWrapper ticksDone = new ReadOnlyLongWrapper();	//	Total number of power cycles (used to tick CIAs' RTC)
-	private int tickRem;	// remainder from above calculation
-	private RunMode lastMode;
+	private final ReadOnlyLongWrapper ticksDone = new ReadOnlyLongWrapper();	//	Total number of power cycles fired
+	private long cyclesSinceTick; // not actually cycles, used for ongoing cycles per tick calculation 
+	private RunMode lastMode;	// is this really needed?  only to reset realtime calculation, could be better way...
+	private final Machine machine;
 	
 	private final HBox buttons = new HBox();
 	private final Oscillator osc;
 	private final Powerline pow;
 	
 	public TimingGenerator(Oscillator o, Powerline p, Machine m, WorkQueue.WorkSender s) {
+		machine = m;
 		osc = o;
 		pow = p;
 		cyclesPerTick = osc.cycles / (osc.seconds * pow.cycles);
@@ -50,36 +52,28 @@ public class TimingGenerator {
 		long now = System.nanoTime();
 		interval = last == 0 ? 1 : now - last;	// If first run, pretend interval is 1 ns, otherwise calculate
 		last = now;
-		long cycles = 0;
-		if (lastMode != mode) {
-			last = 0;	// Force fps to recalculate
-			lastMode = mode;
+		
+		int cycles = mode == RunMode.STEP ? 1 : 0x2000;
+		machine.cycle(cycles);
+		
+		int ticks = 0;
+		cyclesSinceTick += cycles * osc.seconds * pow.cycles;
+		while (cyclesSinceTick > osc.cycles) {
+			ticks++;
+			cyclesSinceTick -= osc.cycles;
+			machine.tick();
 		}
-		switch (mode) {
-		case STEP:
-			cycles = 1;
-			System.out.println("Taking a step");
-			break;
-		case REAL:
-			// TODO figure out how many cycles to run, then how long/if sleep before returning
-			cycles = 1000;	// TODO not really
-			System.out.println("Realtime");
-			try {
-				Thread.sleep(1000);
-			} catch (InterruptedException e) {
-				// Don't need to do anything
-			}
-			break;
-		case FAST:
-			cycles = 0x2000;	// TODO not really
-			try {
-				Thread.sleep(1);	// pretend to do some work
-			} catch (InterruptedException e) {
-				// Don't need to do anything
-			}
-			break;
+		
+		if (mode == RunMode.REAL) {
+			// Figure out how long to sleep
+			cycleRem += cycles * osc.seconds;
+			long targetTime = cycleRem * 1000000000 / osc.cycles;
+			cycleRem = cycleRem % osc.cycles;
 		}
+		
+		// update debug counters
 		propHelper(cyclesDone, cycles);
+		propHelper(ticksDone, ticks);
 		propHelper(elapsed, interval);
 	}
 	// Can't do this within the above method, because the number can't be final...
@@ -93,40 +87,7 @@ public class TimingGenerator {
 		ticksDone.set(0);
 		elapsed.set(0);
 	}
-	/*
-	void runFor(int cycles) {
-		if (tickRem + cycles < cyclesPerTick) {
-			workOutstanding++;
-			workSender.requestCycles(cycles);
-			cyclesDone.set(cyclesDone.get() + cycles);
-			tickRem += cycles;
-		} else {
-			workOutstanding++;
-			workSender.requestCycles(cyclesPerTick - tickRem);
-			cyclesDone.set(cyclesDone.get() + cyclesPerTick - tickRem);
-			cycles -= (cyclesPerTick - tickRem);
-			workOutstanding++;
-			workSender.requestTick();
-			ticksDone.set(ticksDone.get() + 1);
-			
-			while (cycles >= cyclesPerTick) {
-				workOutstanding++;
-				workSender.requestCycles(cyclesPerTick);
-				cyclesDone.set(cyclesDone.get() + cyclesPerTick);
-				cycles -= cyclesPerTick;
-				workOutstanding++;
-				workSender.requestTick();
-				ticksDone.set(ticksDone.get() + 1);
-			}
-			
-			if (cycles > 0) {
-				workOutstanding++;
-				workSender.requestCycles(cycles);
-				cyclesDone.set(cyclesDone.get() + cycles);
-			}
-			tickRem = cycles;
-		}
-	}*/
+	
 	public Node getButtons() {
 		return buttons;
 	}
