@@ -18,13 +18,10 @@ public class TimingGenerator {
 	// Even cpu cycles would overflow in 34 minutes.  RTC ticks could go over a year, but
 	// running at high speed could conceivably reach that in sim time...
 	private long last;	// last frame timestamp
-	private final ReadOnlyLongWrapper elapsed = new ReadOnlyLongWrapper();	// total time since arbitrary point
 	private long interval;	// current frame's duration
-	private final ReadOnlyLongWrapper cyclesDone = new ReadOnlyLongWrapper();	// total cycles run since arbitrary point
 	private long cycleRem;	// leftover time to run in next interval (only used for realtime)
-	private final int cyclesPerTick;	// integer part of how many cpu cycles per RTC tick
-	private final int cyclesPerTickRem;	// remainder of above
-	private final ReadOnlyLongWrapper ticksDone = new ReadOnlyLongWrapper();	//	Total number of power cycles fired
+//	private final int cyclesPerTick;	// integer part of how many cpu cycles per RTC tick
+//	private final int cyclesPerTickRem;	// remainder of above
 	private long cyclesSinceTick; // not actually cycles, used for ongoing cycles per tick calculation 
 	private RunMode lastMode;	// is this really needed?  only to reset realtime calculation, could be better way...
 	private final Machine machine;
@@ -33,12 +30,17 @@ public class TimingGenerator {
 	private final Oscillator osc;
 	private final Powerline pow;
 	
+	// might end up moving these to a new class- monitor? debug?
+	private final ReadOnlyLongWrapper cyclesDone = new ReadOnlyLongWrapper();	// total cycles run since arbitrary point
+	private final ReadOnlyLongWrapper ticksDone = new ReadOnlyLongWrapper();	//	Total number of power cycles fired
+	private final ReadOnlyLongWrapper elapsed = new ReadOnlyLongWrapper();	// total time since arbitrary point
+	
 	public TimingGenerator(Oscillator o, Powerline p, Machine m, WorkQueue.WorkSender s) {
 		machine = m;
 		osc = o;
 		pow = p;
-		cyclesPerTick = osc.cycles / (osc.seconds * pow.cycles);
-		cyclesPerTickRem = osc.cycles % (osc.seconds * pow.cycles);
+//		cyclesPerTick = osc.cycles / (osc.seconds * pow.cycles);
+//		cyclesPerTickRem = osc.cycles % (osc.seconds * pow.cycles);
 		for (RunMode mode : RunMode.values()) {
 			buttons.getChildren().add(mode.makeButton(e -> {
 				s.changeMode(mode);
@@ -50,7 +52,7 @@ public class TimingGenerator {
 	// this will be called on the worker thread
 	public void run(RunMode mode) {
 		long now = System.nanoTime();
-		interval = last == 0 ? 1 : now - last;	// If first run, pretend interval is 1 ns, otherwise calculate
+		interval = last == 0 ? 0x2000000 : now - last;	// If first run, pretend interval is ~8ms, otherwise calculate
 		last = now;
 		
 		int cycles = mode == RunMode.STEP ? 1 : 0x2000;
@@ -66,9 +68,18 @@ public class TimingGenerator {
 		
 		if (mode == RunMode.REAL) {
 			// Figure out how long to sleep
-			cycleRem += cycles * osc.seconds;
-			long targetTime = cycleRem * 1000000000 / osc.cycles;
-			cycleRem = cycleRem % osc.cycles;
+			long targetTime = cycles * osc.seconds * 1000 / osc.cycles;
+			cycleRem = cycles * osc.seconds * 1000 % osc.cycles;
+			long diff = interval / 1000000 - targetTime;
+			if (diff > 0) {
+				try {
+//					System.out.println("Sleeping for " + diff + " ms");
+					Thread.sleep(diff);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
 		}
 		
 		// update debug counters
