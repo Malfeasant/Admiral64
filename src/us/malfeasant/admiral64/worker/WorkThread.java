@@ -45,13 +45,6 @@ public class WorkThread {
 	}
 	public void die() {
 		alive = false;
-		System.out.println("Waiting for worker thread...");
-		try {
-			thread.join(1000);	// give it a second to come quietly
-			System.out.println("Got it.");
-		} catch (InterruptedException e) {
-			System.out.println("Worker thread is not paying attention, need to interrupt.");
-			thread.interrupt();
-		}
+		thread.interrupt();
 	}
 }
