@@ -20,10 +20,7 @@ public class TimingGenerator {
 	private long last;	// last frame timestamp
 	private long interval;	// current frame's duration
 	private long cycleRem;	// leftover time to run in next interval (only used for realtime)
-//	private final int cyclesPerTick;	// integer part of how many cpu cycles per RTC tick
-//	private final int cyclesPerTickRem;	// remainder of above
 	private long cyclesSinceTick; // not actually cycles, used for ongoing cycles per tick calculation 
-	private RunMode lastMode;	// is this really needed?  only to reset realtime calculation, could be better way...
 	private final Machine machine;
 	
 	private final HBox buttons = new HBox();
@@ -52,10 +49,10 @@ public class TimingGenerator {
 	// this will be called on the worker thread
 	public void run(RunMode mode) {
 		long now = System.nanoTime();
-		interval = last == 0 ? 0x2000000 : now - last;	// If first run, pretend interval is ~8ms, otherwise calculate
+		interval = last == 0 ? 0x4000000 : now - last;	// If first run, pretend interval is ~16ms, otherwise calculate
 		last = now;
 		
-		int cycles = mode == RunMode.STEP ? 1 : 0x2000;
+		int cycles = mode == RunMode.STEP ? 1 : 0x4000;
 		machine.cycle(cycles);
 		
 		int ticks = 0;
@@ -70,8 +67,8 @@ public class TimingGenerator {
 			// Figure out how long to sleep
 			long targetTime = cycles * osc.seconds * 1000 / osc.cycles;
 			cycleRem = cycles * osc.seconds * 1000 % osc.cycles;
-			long diff = interval / 1000000 - targetTime;
-			if (diff > 0) {
+			long diff = targetTime - ((System.nanoTime() - last) / 1000000);
+			if (diff > 0) {	// if we're falling short of target, don't sleep...
 				try {
 //					System.out.println("Sleeping for " + diff + " ms");
 					Thread.sleep(diff);
@@ -80,6 +77,10 @@ public class TimingGenerator {
 					e.printStackTrace();
 				}
 			}
+		} else {
+			try {
+				Thread.sleep(1);	// Don't really want to sleep, but if we don't, GUI thread starves...
+			} catch (InterruptedException e) {}
 		}
 		
 		// update debug counters
