@@ -14,18 +14,20 @@ import us.malfeasant.admiral64.worker.WorkQueue;
  *	realtime, or uninhibited. 
  */
 public class TimingGenerator {
-	// Most of these must be longs because timestamps in nanoseconds would overflow an int in 2 seconds.
-	// Even cpu cycles would overflow in 34 minutes.  RTC ticks could go over a year, but
-	// running at high speed could conceivably reach that in sim time...
-	private long last;	// last frame timestamp
-	private long interval;	// current frame's duration
-	private long cycleRem;	// leftover time to run in next interval (only used for realtime)
-	private long cyclesSinceTick; // not actually cycles, used for ongoing cycles per tick calculation 
+	// Most of these must be longs because System.currentTimeMillis() returns long, and rather than casting...
+	private long last;	// last interval timestamp
+	private long interval;	// last interval's actual duration
+	private long target;	// when next interval should happen
+	private long cyclesSinceTick;	// cycles scaled by a factor, used for ongoing cycles per tick calculation 
+	private int cycleIntervalRem;	// used in realtime calculation to add cycles on occasion (likely only matters for PAL)
 	private final Machine machine;
 	
 	private final HBox buttons = new HBox();
 	private final Oscillator osc;
 	private final Powerline pow;
+	private final int cyclesPerInterval;
+	private final int cyclesPerIntervalRem;
+	
 	
 	// might end up moving these to a new class- monitor? debug?
 	private final ReadOnlyLongWrapper cyclesDone = new ReadOnlyLongWrapper();	// total cycles run since arbitrary point
@@ -36,8 +38,10 @@ public class TimingGenerator {
 		machine = m;
 		osc = o;
 		pow = p;
-//		cyclesPerTick = osc.cycles / (osc.seconds * pow.cycles);
-//		cyclesPerTickRem = osc.cycles % (osc.seconds * pow.cycles);
+		
+		cyclesPerInterval = osc.cycles / 1000;
+		cyclesPerIntervalRem = osc.cycles % 1000;
+		
 		for (RunMode mode : RunMode.values()) {
 			buttons.getChildren().add(mode.makeButton(e -> {
 				s.changeMode(mode);
@@ -48,38 +52,43 @@ public class TimingGenerator {
 	
 	// this will be called on the worker thread
 	public void run(RunMode mode) {
-		long now = System.nanoTime();
-		interval = last == 0 ? 0x4000000 : now - last;	// If first run, pretend interval is ~16ms, otherwise calculate
+		long now = System.currentTimeMillis();	// ms accuracy should be good enough
+		interval = last == 0 ? osc.seconds : now - last;	// If first run, pretend interval was dead on, otherwise calculate
 		last = now;
 		
-		int cycles = mode == RunMode.STEP ? 1 : 0x4000;
+		int cycles = mode == RunMode.STEP ? 1 : cyclesPerInterval;
+		if (mode == RunMode.REAL) {
+			cycleIntervalRem += cyclesPerIntervalRem;
+			cycles += cycleIntervalRem / 1000;	// remainder has accumulated to need a new cycle- should only ever add 1
+			cycleIntervalRem %= 1000;
+		}
+		
 		machine.cycle(cycles);
 		
 		int ticks = 0;
 		cyclesSinceTick += cycles * osc.seconds * pow.cycles;
-		while (cyclesSinceTick > osc.cycles) {
+		while (cyclesSinceTick > osc.cycles) {	// should be unusual for this to loop more than once
 			ticks++;
 			cyclesSinceTick -= osc.cycles;
 			machine.tick();
 		}
 		
 		if (mode == RunMode.REAL) {
+			if (target == 0) {	// first run of realtime so do some setup
+				target = System.currentTimeMillis();
+			}
+			target += osc.seconds;
 			// Figure out how long to sleep
-			long targetTime = cycles * osc.seconds * 1000 / osc.cycles;
-			cycleRem = cycles * osc.seconds * 1000 % osc.cycles;
-			long diff = targetTime - ((System.nanoTime() - last) / 1000000);
+			long diff = target - System.currentTimeMillis();	// compute time left in current interval
 			if (diff > 0) {	// if we're falling short of target, don't sleep...
 				try {
-//					System.out.println("Sleeping for " + diff + " ms");
 					Thread.sleep(diff);
-				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
+				} catch (InterruptedException e) {}
 			}
 		} else {
+			target = 0;	// reset realtime calculation
 			try {
-				Thread.sleep(1);	// Don't really want to sleep, but if we don't, GUI thread starves...
+				Thread.sleep(100);	// Don't really want to sleep, but if we don't, GUI thread starves...  TODO fix it
 			} catch (InterruptedException e) {}
 		}
 		

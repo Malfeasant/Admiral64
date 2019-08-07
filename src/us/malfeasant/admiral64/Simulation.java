@@ -41,11 +41,11 @@ public class Simulation {
 		timingMonitor.contentTextProperty().bind(Bindings.format(
 				"%d cycles in %d seconds: %.9fMHz\n%d ticks in %d seconds: %.3fHz",
 				timingGen.cyclesProperty(),
-				timingGen.elapsedProperty().divide(1000000000),
-				timingGen.cyclesProperty().multiply(1e3).divide(timingGen.elapsedProperty()),
+				timingGen.elapsedProperty().divide(1000),
+				timingGen.cyclesProperty().divide(timingGen.elapsedProperty().multiply(1e3)),
 				timingGen.ticksProperty(),
-				timingGen.elapsedProperty().divide(1000000000),
-				timingGen.ticksProperty().multiply(1e9).divide(timingGen.elapsedProperty())));
+				timingGen.elapsedProperty().divide(1000),
+				timingGen.ticksProperty().multiply(1e3).divide(timingGen.elapsedProperty())));
 		
 		console = new Console(conf.name);
 		console.setBottom(timingGen.getButtons());
