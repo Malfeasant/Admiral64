@@ -16,10 +16,8 @@ import us.malfeasant.admiral64.worker.WorkQueue;
 public class TimingGenerator {
 	// Most of these must be longs because System.currentTimeMillis() returns long, and rather than casting...
 	private long last;	// last interval timestamp
-	private long interval;	// last interval's actual duration
-	private long target;	// when next interval should happen
 	private long cyclesSinceTick;	// cycles scaled by a factor, used for ongoing cycles per tick calculation 
-	private int cycleIntervalRem;	// used in realtime calculation to add cycles on occasion (likely only matters for PAL)
+	private int cycleIntervalRem;	// used in realtime calculation to add cycles on occasion (only matters for PAL)
 	private final Machine machine;
 	
 	private final HBox buttons = new HBox();
@@ -27,7 +25,6 @@ public class TimingGenerator {
 	private final Powerline pow;
 	private final int cyclesPerInterval;
 	private final int cyclesPerIntervalRem;
-	
 	
 	// might end up moving these to a new class- monitor? debug?
 	private final ReadOnlyLongWrapper cyclesDone = new ReadOnlyLongWrapper();	// total cycles run since arbitrary point
@@ -53,7 +50,7 @@ public class TimingGenerator {
 	// this will be called on the worker thread
 	public void run(RunMode mode) {
 		long now = System.currentTimeMillis();	// ms accuracy should be good enough
-		interval = last == 0 ? osc.seconds : now - last;	// If first run, pretend interval was dead on, otherwise calculate
+		long interval = last == 0 ? osc.seconds : now - last;	// If first run, pretend interval was dead on, otherwise calculate
 		last = now;
 		
 		int cycles = mode == RunMode.STEP ? 1 : cyclesPerInterval;
@@ -74,21 +71,10 @@ public class TimingGenerator {
 		}
 		
 		if (mode == RunMode.REAL) {
-			if (target == 0) {	// first run of realtime so do some setup
-				target = System.currentTimeMillis();
-			}
-			target += osc.seconds;
 			// Figure out how long to sleep
-			long diff = target - System.currentTimeMillis();	// compute time left in current interval
-			if (diff > 0) {	// if we're falling short of target, don't sleep...
-				try {
-					Thread.sleep(diff);
-				} catch (InterruptedException e) {}
-			}
-		} else {
-			target = 0;	// reset realtime calculation
+			long diff = osc.seconds - (System.currentTimeMillis() % osc.seconds);
 			try {
-				Thread.sleep(100);	// Don't really want to sleep, but if we don't, GUI thread starves...  TODO fix it
+				Thread.sleep(diff);
 			} catch (InterruptedException e) {}
 		}
 		
