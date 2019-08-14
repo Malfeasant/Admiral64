@@ -1,8 +1,8 @@
 package us.malfeasant.admiral64.machine.vic;
 
-import java.util.function.Consumer;
+import java.util.function.Supplier;
 
-public class Vic {
+public class Vic implements Supplier<int[]> {
 	public enum Flavor {
 		MOS6567R56A(64, 262), MOS6567R8(65, 263), MOS6569(63, 312);
 		private final int cyclesPerLine;
@@ -14,7 +14,9 @@ public class Vic {
 	}
 	private final Flavor flavor;
 	
-	private Consumer<Pixels> videoOut;
+	private volatile int[] pixelBuffer;	// Since only the worker thread writes to this, shouldn't need full locking semantics
+	// volatile should be enough, provided we re-write the ref periodically (which gives a happens-before guarantee)
+	// 8 4-bit pixels are packed into a 32-bit int.
 	
 	private final int vBottom = 251;	//	TODO: dependent on csel- alt 247
 	private final int vTop = 51;	//	TODO: dependent on csel- alt 55
@@ -31,11 +33,12 @@ public class Vic {
 	
 	public Vic(Flavor f) {
 		flavor = f;
+		pixelBuffer = new int[f.cyclesPerLine * f.linesPerField];
 	}
 	
 	public void cycle() {
 		rasterCycle++;
-		Pixels.Builder pixels = new Pixels.Builder();
+		int packed = 0;
 		for (int x = 0; x < 8; x++) {
 			int pixel = 0;
 			switch (rasterCycle * 8 + x) {
@@ -96,12 +99,16 @@ public class Vic {
 			} else {
 				pixel = backColor;
 			}
-			pixels.setColorAt(x, pixel);
+			assert pixel == (pixel & 0xf) : "Invalid pixel value " + pixel;
+			packed = (packed << 4) | pixel;
 		}
-		videoOut.accept(pixels.build(rasterCycle, rasterLine));
+		pixelBuffer[rasterCycle + rasterLine * flavor.cyclesPerLine] = packed;
+		pixelBuffer = pixelBuffer;	// Ensure the write is noticed by other threads	TODO: Experimental- verify it works as expected
 	}
 	
-	public void connectVideo(Consumer<Pixels> v) {
-		videoOut = v;
+	// called by application thread- in practice always gets the same array
+	@Override
+	public int[] get() {
+		return pixelBuffer;
 	}
 }

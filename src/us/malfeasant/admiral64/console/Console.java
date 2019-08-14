@@ -1,9 +1,5 @@
 package us.malfeasant.admiral64.console;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.function.Consumer;
 
 import javafx.animation.AnimationTimer;
@@ -22,18 +18,16 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
-import us.malfeasant.admiral64.machine.vic.Pixels;
 
-public class Console extends AnimationTimer implements Consumer<Pixels> {
+public class Console extends AnimationTimer implements Consumer<int[]> {
 	private final Stage window;
 	private final ImageView canvas;
 	private final WritableImage image;
 	private final PixelWriter pixelWriter;
 	private final BorderPane root;
 	private final MenuItem showTiming;
-	private final BlockingQueue<Pixels> queue = new LinkedBlockingQueue<>();
 	
-	private static final Color[] palette = {
+	private static final Color[] palette = {	// TODO: make this configurable
 		Color.BLACK, Color.WHITE, 
 		Color.web("813338"),	// Red
 		Color.web("75cec8"),	// Cyan
@@ -55,7 +49,7 @@ public class Console extends AnimationTimer implements Consumer<Pixels> {
 		window = new Stage();
 		window.setTitle(title);
 		
-		image = new WritableImage(520, 312);	// TODO: match Vic dimensions
+		image = new WritableImage(520, 312);	// TODO: match Vic dimensions- maybe defer creation until pixel buffer is attached?
 		pixelWriter = image.getPixelWriter();
 		canvas = new ImageViewWrapper(image);
 		canvas.setViewport(new Rectangle2D(0, 41, 376, 220));
@@ -86,21 +80,11 @@ public class Console extends AnimationTimer implements Consumer<Pixels> {
 	
 	@Override
 	public void handle(long now) {
-		List<Pixels> pixelList = new ArrayList<>();
-		queue.drainTo(pixelList);
-		for (Pixels p : pixelList) {
-			for (int x=0; x<8; x++) {
-				pixelWriter.setColor(p.column * 8 + x, p.line, palette[(p.reader.getColorAt(x))]);
-			}
-		}
+		
 	}
-	
-	/**
-	 *	This will be called from the worker thread
-	 */
+
 	@Override
-	public void accept(Pixels bar) {
-		boolean success = queue.offer(bar);	// queue is unbounded, so shouldn't ever fail
-		assert success : "Pixel queue apparently full.";
+	public void accept(int[] arg0) {
+		
 	}
 }
