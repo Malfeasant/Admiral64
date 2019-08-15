@@ -1,12 +1,12 @@
 package us.malfeasant.admiral64.machine.vic;
 
-import java.util.function.Supplier;
+import us.malfeasant.admiral64.console.FrameBuffer;
 
-public class Vic implements Supplier<int[]> {
+public class Vic {
 	public enum Flavor {
 		MOS6567R56A(64, 262), MOS6567R8(65, 263), MOS6569(63, 312);
-		private final int cyclesPerLine;
-		private final int linesPerField;
+		public final int cyclesPerLine;	// Several classes need these dimensions
+		public final int linesPerField;
 		Flavor(int cpl, int lpf) {
 			cyclesPerLine = cpl;
 			linesPerField = lpf;
@@ -14,9 +14,7 @@ public class Vic implements Supplier<int[]> {
 	}
 	private final Flavor flavor;
 	
-	private volatile int[] pixelBuffer;	// Since only the worker thread writes to this, shouldn't need full locking semantics
-	// volatile should be enough, provided we re-write the ref periodically (which gives a happens-before guarantee)
-	// 8 4-bit pixels are packed into a 32-bit int.
+	private final FrameBuffer pixelBuffer;
 	
 	private final int vBottom = 251;	//	TODO: dependent on csel- alt 247
 	private final int vTop = 51;	//	TODO: dependent on csel- alt 55
@@ -33,7 +31,7 @@ public class Vic implements Supplier<int[]> {
 	
 	public Vic(Flavor f) {
 		flavor = f;
-		pixelBuffer = new int[f.cyclesPerLine * f.linesPerField];
+		pixelBuffer = new FrameBuffer(f.cyclesPerLine, f.linesPerField);
 	}
 	
 	public void cycle() {
@@ -102,13 +100,10 @@ public class Vic implements Supplier<int[]> {
 			assert pixel == (pixel & 0xf) : "Invalid pixel value " + pixel;
 			packed = (packed << 4) | pixel;
 		}
-		pixelBuffer[rasterCycle + rasterLine * flavor.cyclesPerLine] = packed;
-		pixelBuffer = pixelBuffer;	// Ensure the write is noticed by other threads	TODO: Experimental- verify it works as expected
+		pixelBuffer.set(rasterCycle, rasterLine, packed);
 	}
 	
-	// called by application thread- in practice always gets the same array
-	@Override
-	public int[] get() {
+	public FrameBuffer getFrameBuffer() {
 		return pixelBuffer;
 	}
 }

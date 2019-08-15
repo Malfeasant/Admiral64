@@ -1,7 +1,5 @@
 package us.malfeasant.admiral64.console;
 
-import java.util.function.Consumer;
-
 import javafx.animation.AnimationTimer;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
@@ -19,13 +17,14 @@ import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 
-public class Console extends AnimationTimer implements Consumer<int[]> {
+public class Console extends AnimationTimer {
 	private final Stage window;
 	private final ImageView canvas;
 	private final WritableImage image;
 	private final PixelWriter pixelWriter;
 	private final BorderPane root;
 	private final MenuItem showTiming;
+	private final FrameBuffer pixelBuffer;
 	
 	private static final Color[] palette = {	// TODO: make this configurable
 		Color.BLACK, Color.WHITE, 
@@ -45,7 +44,9 @@ public class Console extends AnimationTimer implements Consumer<int[]> {
 		Color.web("b2b2b2") 	// Lt. Gray
 	};
 	
-	public Console(String title) {
+	public Console(String title, FrameBuffer fb) {
+		pixelBuffer = fb;
+		
 		window = new Stage();
 		window.setTitle(title);
 		
@@ -80,11 +81,15 @@ public class Console extends AnimationTimer implements Consumer<int[]> {
 	
 	@Override
 	public void handle(long now) {
-		
-	}
-
-	@Override
-	public void accept(int[] arg0) {
-		
+		// TODO: only update visible portion
+		// TODO: keep track of how much of buffer has changed, only transfer what is needed
+		for (int line = 0; line < pixelBuffer.lines; line++) {
+			for (int cycle = 0; cycle < pixelBuffer.cycles; cycle++) {
+				int packed = pixelBuffer.get(cycle, line);
+				for (int pos = 0; pos < 8; pos++) {
+					pixelWriter.setColor(cycle * 8 + pos, line, palette[(packed >> (4 * (7 - pos)) & 0xf)]);
+				}
+			}
+		}
 	}
 }

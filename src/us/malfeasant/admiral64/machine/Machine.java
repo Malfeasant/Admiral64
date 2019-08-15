@@ -3,6 +3,7 @@ package us.malfeasant.admiral64.machine;
 import java.io.IOException;
 
 import us.malfeasant.admiral64.Configuration;
+import us.malfeasant.admiral64.console.FrameBuffer;
 import us.malfeasant.admiral64.machine.vic.Vic;
 import us.malfeasant.admiral64.machine.bus.ROM;
 
@@ -29,8 +30,6 @@ public class Machine {
 		}
 	}
 	
-	
-	
 	/**
 	 *	Tick the RTC
 	 */
@@ -45,5 +44,9 @@ public class Machine {
 		for (int i = 0; i < times; i++) {
 			vic.cycle();
 		}
+	}
+	
+	public FrameBuffer getFrameBuffer() {
+		return vic.getFrameBuffer();
 	}
 }

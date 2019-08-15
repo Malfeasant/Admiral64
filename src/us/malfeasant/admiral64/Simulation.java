@@ -26,6 +26,7 @@ public class Simulation {
 	
 	public Simulation(Configuration conf) {
 		config = conf;
+		
 		machine = new Machine(conf);
 		WorkQueue queue = new WorkQueue();
 		sender = queue.getSender();
@@ -47,7 +48,7 @@ public class Simulation {
 				timingGen.elapsedProperty().divide(1000),
 				timingGen.ticksProperty().multiply(1e3).divide(timingGen.elapsedProperty())));
 		
-		console = new Console(conf.name);
+		console = new Console(conf.name, machine.getFrameBuffer());
 		console.setBottom(timingGen.getButtons());
 		console.setOnCloseRequest((event) -> {
 			// TODO: Dialog- allow saving some state, cancel.  For now, just kill the sim.
@@ -60,8 +61,6 @@ public class Simulation {
 			timingMonitor.show();
 		});
 		
-		machine.connectVideo(console);
-//		timingGen.start();
 		worker.start();
 		console.start();
 	}
