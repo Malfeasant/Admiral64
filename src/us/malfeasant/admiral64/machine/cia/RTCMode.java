@@ -1,4 +1,4 @@
-package us.malfeasant.admiral64.timing;
+package us.malfeasant.admiral64.machine.cia;
 
 /**
  * Represents the different ways the RTC can be handled- note, there are actually two RTCs, one in each CIA chip.  Maybe let

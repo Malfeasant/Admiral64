@@ -1,10 +1,10 @@
 package us.malfeasant.admiral64;
 
 import us.malfeasant.admiral64.machine.bus.BuiltInROMs;
+import us.malfeasant.admiral64.machine.cia.RTCMode;
 import us.malfeasant.admiral64.machine.vic.Vic;
 import us.malfeasant.admiral64.timing.Oscillator;
 import us.malfeasant.admiral64.timing.Powerline;
-import us.malfeasant.admiral64.timing.RTCMode;
 
 public class Configuration {
 	public enum Quick {
