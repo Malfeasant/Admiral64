@@ -4,6 +4,7 @@ import us.malfeasant.admiral64.machine.bus.BuiltInROMs;
 import us.malfeasant.admiral64.machine.vic.Vic;
 import us.malfeasant.admiral64.timing.Oscillator;
 import us.malfeasant.admiral64.timing.Powerline;
+import us.malfeasant.admiral64.timing.RTCMode;
 
 public class Configuration {
 	public enum Quick {
@@ -35,6 +36,7 @@ public class Configuration {
 		final Vic.Flavor vicFlavor;
 		final Oscillator oscillator;
 		final Powerline powerline;
+		final RTCMode rtc;
 		final BuiltInROMs basicRom;
 		final BuiltInROMs charRom;
 		final BuiltInROMs kernalRom;
@@ -43,28 +45,31 @@ public class Configuration {
 			vicFlavor = vf;
 			oscillator = o;
 			powerline = p;
+			rtc = RTCMode.SIM;
 			basicRom = BuiltInROMs.BASIC;
 			kernalRom = kr;
 			charRom = BuiltInROMs.CHAR;
 		}
 		Configuration getConfig(String name) {
-			return new Configuration(name, vicFlavor, oscillator, powerline, basicRom, kernalRom, charRom);
+			return new Configuration(name, vicFlavor, oscillator, powerline, rtc, basicRom, kernalRom, charRom);
 		}
 	}
 	public final Vic.Flavor vicFlavor;
 	public final Oscillator oscillator;
 	public final Powerline powerline;
+	public final RTCMode rtcMode;
 	public final String name;
 	public final BuiltInROMs basicRom;
 	public final BuiltInROMs charRom;
 	public final BuiltInROMs kernalRom;
 	
-	private Configuration(String n, Vic.Flavor vf, Oscillator o, Powerline p,
+	private Configuration(String n, Vic.Flavor vf, Oscillator o, Powerline p, RTCMode rtc,
 			BuiltInROMs br, BuiltInROMs kr, BuiltInROMs cr) {
 		name = n;
 		vicFlavor = vf;
 		oscillator = o;
 		powerline = p;
+		rtcMode = rtc;
 		basicRom = br;
 		kernalRom = kr;
 		charRom = cr;
