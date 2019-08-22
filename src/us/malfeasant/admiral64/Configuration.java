@@ -36,7 +36,6 @@ public class Configuration {
 		final Vic.Flavor vicFlavor;
 		final Oscillator oscillator;
 		final Powerline powerline;
-		final RTC.Mode rtc;
 		final BuiltInROMs basicRom;
 		final BuiltInROMs charRom;
 		final BuiltInROMs kernalRom;
@@ -45,31 +44,36 @@ public class Configuration {
 			vicFlavor = vf;
 			oscillator = o;
 			powerline = p;
-			rtc = RTC.Mode.SIM;
 			basicRom = BuiltInROMs.BASIC;
 			kernalRom = kr;
 			charRom = BuiltInROMs.CHAR;
 		}
 		Configuration getConfig(String name) {
-			return new Configuration(name, vicFlavor, oscillator, powerline, rtc, basicRom, kernalRom, charRom);
+			return new Configuration(name, vicFlavor, oscillator, powerline, basicRom, kernalRom, charRom);
 		}
 	}
 	public final Vic.Flavor vicFlavor;
 	public final Oscillator oscillator;
 	public final Powerline powerline;
-	public final RTC.Mode rtcMode;
+	public final RTC.Mode rtcMode1;
+	public final RTC.Mode rtcMode2;
 	public final String name;
 	public final BuiltInROMs basicRom;
 	public final BuiltInROMs charRom;
 	public final BuiltInROMs kernalRom;
 	
-	private Configuration(String n, Vic.Flavor vf, Oscillator o, Powerline p, RTC.Mode rtc,
+	private Configuration(String n, Vic.Flavor vf, Oscillator o, Powerline p,
 			BuiltInROMs br, BuiltInROMs kr, BuiltInROMs cr) {
 		name = n;
 		vicFlavor = vf;
 		oscillator = o;
 		powerline = p;
-		rtcMode = rtc;
+		rtcMode1 = RTC.Mode.SIM;	// cia1 is connected to IRQ which is level sensitive
+		rtcMode2 = RTC.Mode.REALTIME;	// cia2 gets NMI which is edge triggered
+		// TODO: Test & decide whether to make configurable or just keep it like this- alarm time triggers interrupt-
+		// level sensitive interrupt is more suited to fully simulated mode- since the two clocks run in sync,
+		// sim will never miss a match, but realtime could- and since nmi is edge triggered, that can be faked and if
+		// for example the sim is paused when the alarm time comes and goes, the 'edge' can be sensed when sim restarts.
 		basicRom = br;
 		kernalRom = kr;
 		charRom = cr;
