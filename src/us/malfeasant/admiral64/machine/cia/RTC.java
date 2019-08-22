@@ -25,6 +25,7 @@ public abstract class RTC {
 		}
 	}
 	
-	public void tick() {}	// base method does nothing, only SimRTC overrides
-	public abstract int getTime();
+	void tick() {}	// base method does nothing, only SimRTC overrides
+	void setTime(int time) {}	// base method does nothing
+	abstract int getTime();
 }
