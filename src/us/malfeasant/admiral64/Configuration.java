@@ -1,7 +1,7 @@
 package us.malfeasant.admiral64;
 
 import us.malfeasant.admiral64.machine.bus.BuiltInROMs;
-import us.malfeasant.admiral64.machine.cia.CIA;
+import us.malfeasant.admiral64.machine.cia.RTC;
 import us.malfeasant.admiral64.machine.vic.Vic;
 import us.malfeasant.admiral64.timing.Oscillator;
 import us.malfeasant.admiral64.timing.Powerline;
@@ -36,7 +36,7 @@ public class Configuration {
 		final Vic.Flavor vicFlavor;
 		final Oscillator oscillator;
 		final Powerline powerline;
-		final CIA.RTCMode rtc;
+		final RTC.Mode rtc;
 		final BuiltInROMs basicRom;
 		final BuiltInROMs charRom;
 		final BuiltInROMs kernalRom;
@@ -45,7 +45,7 @@ public class Configuration {
 			vicFlavor = vf;
 			oscillator = o;
 			powerline = p;
-			rtc = CIA.RTCMode.SIM;
+			rtc = RTC.Mode.SIM;
 			basicRom = BuiltInROMs.BASIC;
 			kernalRom = kr;
 			charRom = BuiltInROMs.CHAR;
@@ -57,13 +57,13 @@ public class Configuration {
 	public final Vic.Flavor vicFlavor;
 	public final Oscillator oscillator;
 	public final Powerline powerline;
-	public final CIA.RTCMode rtcMode;
+	public final RTC.Mode rtcMode;
 	public final String name;
 	public final BuiltInROMs basicRom;
 	public final BuiltInROMs charRom;
 	public final BuiltInROMs kernalRom;
 	
-	private Configuration(String n, Vic.Flavor vf, Oscillator o, Powerline p, CIA.RTCMode rtc,
+	private Configuration(String n, Vic.Flavor vf, Oscillator o, Powerline p, RTC.Mode rtc,
 			BuiltInROMs br, BuiltInROMs kr, BuiltInROMs cr) {
 		name = n;
 		vicFlavor = vf;
