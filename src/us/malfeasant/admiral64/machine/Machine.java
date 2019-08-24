@@ -6,6 +6,7 @@ import us.malfeasant.admiral64.Configuration;
 import us.malfeasant.admiral64.console.FrameBuffer;
 import us.malfeasant.admiral64.machine.vic.Vic;
 import us.malfeasant.admiral64.machine.bus.ROM;
+import us.malfeasant.admiral64.machine.cia.CIA;
 
 /**
  *	This class will encompass the entire simulation, minus the gui bits and thread management.  Ideally, it shouldn't
@@ -13,12 +14,16 @@ import us.malfeasant.admiral64.machine.bus.ROM;
  */
 public class Machine {
 	private final Vic vic;
+	private final CIA cia1;
+	private final CIA cia2;
 	private final ROM basic;
 	private final ROM charGen;
 	private final ROM kernal;
 	
 	public Machine(Configuration conf) {
 		vic = new Vic(conf.vicFlavor);
+		cia1 = new CIA(conf.rtcMode1);
+		cia2 = new CIA(conf.rtcMode2);
 		try {
 			basic = conf.basicRom.load();
 			charGen = conf.charRom.load();
@@ -31,10 +36,11 @@ public class Machine {
 	}
 	
 	/**
-	 *	Tick the RTC
+	 *	Tick the RTCs
 	 */
 	public void tick() {
-		
+		cia1.tick();
+		cia2.tick();
 	}
 	
 	/**
