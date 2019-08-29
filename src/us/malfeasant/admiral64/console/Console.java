@@ -1,29 +1,20 @@
 package us.malfeasant.admiral64.console;
 
 import javafx.animation.AnimationTimer;
-import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.Node;
-import javafx.scene.Scene;
-import javafx.scene.control.Menu;
-import javafx.scene.control.MenuBar;
-import javafx.scene.control.MenuItem;
 import javafx.scene.image.ImageView;
 import javafx.scene.image.PixelWriter;
 import javafx.scene.image.WritableImage;
-import javafx.scene.layout.BorderPane;
 import javafx.scene.paint.Color;
-import javafx.stage.Stage;
-import javafx.stage.WindowEvent;
 
 public class Console extends AnimationTimer {
-	private final Stage window;
+//	private final Stage window;	// moving to Simulation
 	private final ImageView canvas;
 	private final WritableImage image;
 	private final PixelWriter pixelWriter;
-	private final BorderPane root;
-	private final MenuItem showTiming;
+//	private final BorderPane root;	// moving to Simulation
+//	private final MenuItem showTiming;
 	private final FrameBuffer pixelBuffer;
 	
 	private static final Color[] palette = {	// TODO: make this configurable
@@ -44,39 +35,17 @@ public class Console extends AnimationTimer {
 		Color.web("b2b2b2") 	// Lt. Gray
 	};
 	
-	public Console(String title, FrameBuffer fb) {
+	public Console(FrameBuffer fb) {
 		pixelBuffer = fb;
-		
-		window = new Stage();
-		window.setTitle(title);
 		
 		image = new WritableImage(520, 312);	// TODO: match Vic dimensions- maybe defer creation until pixel buffer is attached?
 		pixelWriter = image.getPixelWriter();
 		canvas = new ImageViewWrapper(image);
 		canvas.setViewport(new Rectangle2D(0, 41, 376, 220));
-		
-		root = new BorderPane(canvas);
-		window.setScene(new Scene(root));
-		
-		showTiming = new MenuItem("Show timing...");
-		Menu debugMenu = new Menu("Debug");
-		debugMenu.getItems().add(showTiming);
-		MenuBar bar = new MenuBar();
-		bar.getMenus().add(debugMenu);
-		root.setTop(bar);
-		
-		window.show();
 	}
 	
-	public void addTimingMonitorMenuHandler(EventHandler<ActionEvent> eventHandler) {
-		showTiming.addEventHandler(ActionEvent.ACTION, eventHandler);
-	}
-	
-	public void setBottom(Node n) {
-		root.setBottom(n);
-	}
-	public void setOnCloseRequest(EventHandler<WindowEvent> e) {
-		window.setOnCloseRequest(e);
+	public Node getNode() {
+		return canvas;
 	}
 	
 	@Override

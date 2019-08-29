@@ -1,9 +1,16 @@
 package us.malfeasant.admiral64;
 
 import javafx.beans.binding.Bindings;
+import javafx.event.ActionEvent;
+import javafx.scene.Scene;
 import javafx.scene.control.Alert;
+import javafx.scene.control.Menu;
+import javafx.scene.control.MenuBar;
+import javafx.scene.control.MenuItem;
 import javafx.scene.control.Alert.AlertType;
+import javafx.scene.layout.BorderPane;
 import javafx.stage.Modality;
+import javafx.stage.Stage;
 import us.malfeasant.admiral64.console.Console;
 import us.malfeasant.admiral64.machine.Machine;
 import us.malfeasant.admiral64.timing.TimingGenerator;
@@ -16,6 +23,8 @@ import us.malfeasant.admiral64.worker.WorkThread;
  *	together.  
  */
 public class Simulation {
+	private final Stage window;
+	private final BorderPane root;
 	private final Configuration config;
 	private final TimingGenerator timingGen;
 	private final Console console;
@@ -26,6 +35,12 @@ public class Simulation {
 	
 	public Simulation(Configuration conf) {
 		config = conf;
+		
+		window = new Stage();
+		window.setTitle(conf.name);
+		
+		root = new BorderPane();
+		window.setScene(new Scene(root));
 		
 		machine = new Machine(conf);
 		WorkQueue queue = new WorkQueue();
@@ -48,20 +63,31 @@ public class Simulation {
 				timingGen.elapsedProperty().divide(1000),
 				timingGen.ticksProperty().multiply(1e3).divide(timingGen.elapsedProperty())));
 		
-		console = new Console(conf.name, machine.getFrameBuffer());
-		console.setBottom(timingGen.getButtons());
-		console.setOnCloseRequest((event) -> {
+		console = new Console(machine.getFrameBuffer());
+		
+		root.setCenter(console.getNode());
+		root.setBottom(timingGen.getButtons());
+		
+		window.setOnCloseRequest((event) -> {
 			// TODO: Dialog- allow saving some state, cancel.  For now, just kill the sim.
 			worker.die();
 		});
 		
+		MenuItem showTiming = new MenuItem("Show timing...");
+		Menu debugMenu = new Menu("Debug");
+		debugMenu.getItems().add(showTiming);
+		MenuBar bar = new MenuBar();
+		bar.getMenus().add(debugMenu);
+		root.setTop(bar);
+		
 		// would be much easier with binding, but it's read only
-		console.addTimingMonitorMenuHandler((event) -> {
+		showTiming.addEventHandler(ActionEvent.ACTION, (event) -> {
 			timingGen.reset();	// start from a zero count
 			timingMonitor.show();
 		});
 		
 		worker.start();
 		console.start();
+		window.show();
 	}
 }
