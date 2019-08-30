@@ -18,7 +18,7 @@ public abstract class RTC {
 	public enum Mode {
 		SIM(() -> new SimRTC()),
 		OFFSET(() -> null),	// TODO: obvious
-		REALTIME(() -> null);	// TODO: obvious
+		REALTIME(() -> new RealRTC());
 		final Supplier<RTC> factory;
 		Mode(Supplier<RTC> fact) {
 			factory = fact;

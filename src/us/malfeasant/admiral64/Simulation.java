@@ -50,6 +50,7 @@ public class Simulation {
 		timingGen.cyclesProperty().get();	// and throw it away
 		timingGen.ticksProperty().get();	// ditto
 		// Otherwise they never get invalidated because they're never valid to begin with... joy.
+		
 		timingMonitor = new Alert(AlertType.INFORMATION);
 		timingMonitor.initModality(Modality.NONE);
 		timingMonitor.setTitle("Timing monitor");

@@ -6,6 +6,10 @@ package us.malfeasant.admiral64.machine.cia;
 public class SimRTC extends RTC {
 	private int time;	// packed bcd bits: pHhh hhMM Mmmm mSSS ssss tttt
 	
+	SimRTC() {
+		time = 0x40000;	// Represents 1am (Or is it supposed to be pm? TODO: find out.)
+	}
+	
 	@Override
 	public void tick() {
 		// Break out individual fields and increment as needed- only unpack/pack fields that need to be modified
@@ -21,8 +25,8 @@ public class SimRTC extends RTC {
 				int tsec = time & 0x700;
 				if (tsec == 0x500) {	// xx:xx:59.9
 					tsec = 0;
-					int min = time & 0xe800;
-					if (min == 0x8800) {	// xx:x9:59.9
+					int min = time & 0x7800;
+					if (min == 0x4800) {	// xx:x9:59.9
 						min = 0;
 						int tmin = time & 0x38000;
 						if (tmin == 0x28000) {	// xx:59:59.9
@@ -56,13 +60,14 @@ public class SimRTC extends RTC {
 					} else {
 						min += 0x800;
 					}
-					time &= ~0xe800;
-					time |= min & 0xe800;
+					time &= ~0x7800;
+					time |= min & 0x7800;
 				} else {
 					tsec += 0x100;
 				}
 				time &= ~0x700;
 				time |= tsec & 0x700;
+				System.out.format("End of ten seconds: Packed: %X\n", time);
 			} else {
 				sec += 0x10;
 			}
