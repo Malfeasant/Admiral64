@@ -45,7 +45,9 @@ public class Simulation {
 		machine = new Machine(conf);
 		WorkQueue queue = new WorkQueue();
 		sender = queue.getSender();
-		timingGen = new TimingGenerator(config.oscillator, config.powerline, machine, sender);
+		timingGen = new TimingGenerator(config.oscillator, config.powerline, sender);
+		machine.connectTiming(timingGen);
+		
 		worker = new WorkThread(queue.getReceiver(), timingGen);
 		timingGen.cyclesProperty().get();	// and throw it away
 		timingGen.ticksProperty().get();	// ditto
@@ -83,7 +85,7 @@ public class Simulation {
 		
 		// would be much easier with binding, but it's read only
 		showTiming.addEventHandler(ActionEvent.ACTION, (event) -> {
-			timingGen.reset();	// start from a zero count
+			timingGen.resetDebugCounters();	// start from a zero count
 			timingMonitor.show();
 		});
 		

@@ -5,6 +5,7 @@ import java.io.IOException;
 import us.malfeasant.admiral64.Configuration;
 import us.malfeasant.admiral64.console.FrameBuffer;
 import us.malfeasant.admiral64.machine.vic.Vic;
+import us.malfeasant.admiral64.timing.TimingGenerator;
 import us.malfeasant.admiral64.machine.bus.ROM;
 import us.malfeasant.admiral64.machine.cia.CIA;
 
@@ -35,21 +36,12 @@ public class Machine {
 		}
 	}
 	
-	/**
-	 *	Tick the RTCs
-	 */
-	public void tick() {
-		cia1.tick();
-		cia2.tick();
-	}
-	
-	/**
-	 *	Run some θ2 cycles
-	 */
-	public void cycle(int times) {
-		for (int i = 0; i < times; i++) {
-			vic.cycle();
-		}
+	public void connectTiming(TimingGenerator tg) {
+		tg.addCrystalConsumer(cia1);
+		tg.addCrystalConsumer(cia2);
+		tg.addCrystalConsumer(vic);
+		tg.addPowerConsumer(cia1);
+		tg.addPowerConsumer(cia2);
 	}
 	
 	public FrameBuffer getFrameBuffer() {

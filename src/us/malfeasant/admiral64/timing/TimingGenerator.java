@@ -1,12 +1,13 @@
 package us.malfeasant.admiral64.timing;
 
+import java.util.concurrent.CopyOnWriteArraySet;
+
 import javafx.application.Platform;
 import javafx.beans.property.ReadOnlyLongProperty;
 import javafx.beans.property.ReadOnlyLongWrapper;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.layout.HBox;
-import us.malfeasant.admiral64.machine.Machine;
 import us.malfeasant.admiral64.worker.WorkQueue;
 
 /**
@@ -18,7 +19,8 @@ public class TimingGenerator {
 	private long last;	// last interval timestamp
 	private long cyclesSinceTick;	// cycles scaled by a factor, used for ongoing cycles per tick calculation 
 	private int cycleIntervalRem;	// used in realtime calculation to add cycles on occasion (only matters for PAL)
-	private final Machine machine;
+	private final CopyOnWriteArraySet<PowerConsumer> powerConsumers;
+	private final CopyOnWriteArraySet<CrystalConsumer> crystalConsumers;
 	
 	private final HBox buttons = new HBox();
 	private final Oscillator osc;
@@ -31,8 +33,9 @@ public class TimingGenerator {
 	private final ReadOnlyLongWrapper ticksDone = new ReadOnlyLongWrapper();	//	Total number of power cycles fired
 	private final ReadOnlyLongWrapper elapsed = new ReadOnlyLongWrapper();	// total time since arbitrary point
 	
-	public TimingGenerator(Oscillator o, Powerline p, Machine m, WorkQueue.WorkSender s) {
-		machine = m;
+	public TimingGenerator(Oscillator o, Powerline p, WorkQueue.WorkSender s) {
+		powerConsumers = new CopyOnWriteArraySet<PowerConsumer>();
+		crystalConsumers = new CopyOnWriteArraySet<CrystalConsumer>();
 		osc = o;
 		pow = p;
 		
@@ -60,14 +63,20 @@ public class TimingGenerator {
 			cycleIntervalRem %= 1000;
 		}
 		
-		machine.cycle(cycles);
+		for (int cycle = 0; cycle < cycles; cycle++) {
+			for (CrystalConsumer cc : crystalConsumers) {
+				cc.cycle();
+			}
+		}
 		
 		int ticks = 0;
 		cyclesSinceTick += cycles * osc.seconds * pow.cycles;
 		while (cyclesSinceTick > osc.cycles) {	// should be unusual for this to loop more than once
 			ticks++;
 			cyclesSinceTick -= osc.cycles;
-			machine.tick();
+			for (PowerConsumer pc : powerConsumers) {
+				pc.tick();
+			}
 		}
 		
 		if (mode == RunMode.REAL) {
@@ -89,15 +98,33 @@ public class TimingGenerator {
 			wrapper.set(wrapper.get() + num);
 		});
 	}
-	public void reset() {
+	public void resetDebugCounters() {
 		cyclesDone.set(0);
 		ticksDone.set(0);
 		elapsed.set(0);
 	}
 	
+	// Threadsafe add listener for cpu clock events
+	public void addCrystalConsumer(CrystalConsumer cc) {
+		crystalConsumers.add(cc);
+	}
+	public void removeCrystalConsumer(CrystalConsumer cc) {
+		crystalConsumers.remove(cc);
+	}
+	
+	// Threadsafe add listener for powerline events
+	public void addPowerConsumer(PowerConsumer pc) {
+		powerConsumers.add(pc);
+	}
+	public void removePowerConsumer(PowerConsumer pc) {
+		powerConsumers.remove(pc);
+	}
+	
 	public Node getButtons() {
 		return buttons;
 	}
+	// TODO: Migrate these debug counters out of this class- should be able to add
+	// power and crystal listeners just like the various chips...
 	public ReadOnlyLongProperty elapsedProperty() { return elapsed.getReadOnlyProperty(); }
 	public long getElapsed() { return elapsed.get(); }
 	public ReadOnlyLongProperty cyclesProperty() { return cyclesDone.getReadOnlyProperty(); }

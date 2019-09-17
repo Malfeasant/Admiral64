@@ -3,7 +3,7 @@ package us.malfeasant.admiral64.machine.cia;
 import java.time.LocalTime;
 import java.time.temporal.ChronoField;
 
-public class RealRTC extends RTC {
+class RealRTC extends RTC {
 	@Override
 	public int getTime() {	// packs current time into bcd bits: phhhhhmmmmmmmssssssstttt
 		LocalTime now = LocalTime.now();

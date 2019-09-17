@@ -1,8 +1,9 @@
 package us.malfeasant.admiral64.machine.vic;
 
 import us.malfeasant.admiral64.console.FrameBuffer;
+import us.malfeasant.admiral64.timing.CrystalConsumer;
 
-public class Vic {
+public class Vic implements CrystalConsumer {
 	public enum Flavor {
 		MOS6567R56A(64, 262), MOS6567R8(65, 263), MOS6569(63, 312);
 		public final int cyclesPerLine;	// Several classes need these dimensions
@@ -34,6 +35,7 @@ public class Vic {
 		pixelBuffer = new FrameBuffer(f.cyclesPerLine, f.linesPerField);
 	}
 	
+	@Override
 	public void cycle() {
 		rasterCycle++;
 		int packed = 0;
