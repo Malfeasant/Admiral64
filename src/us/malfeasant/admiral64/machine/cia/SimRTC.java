@@ -67,7 +67,6 @@ public class SimRTC extends RTC {
 				}
 				time &= ~0x700;
 				time |= tsec & 0x700;
-				System.out.format("End of ten seconds: Packed: %X\n", time);
 			} else {
 				sec += 0x10;
 			}
