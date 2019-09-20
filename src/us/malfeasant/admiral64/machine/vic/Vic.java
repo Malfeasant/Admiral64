@@ -55,16 +55,25 @@ public class Vic implements CrystalConsumer {
 		
 		int packed = 0;
 		
-		switch (currentCycle) {	// Rough matches- TODO: add when to assert BA
+		switch (currentCycle) {	// Rough matches- TODO: add when to assert BA for sprites & 
 		case RESET_X:
 			rasterX = 0;
 			break;
 		case INC_Y:
 			rasterY++;
+			if (rasterY >= flavor.linesPerField) rasterY = 0;	// end of field, reset y counter
+			switch (rasterY) {
+			case vBottom:
+				vBorder = true;
+				break;
+			case vTop:
+				vBorder = !dispEnable;
+				break;
+			}
 			break;
 		}
 		
-		for (int i = 0; i < 8; i++) {
+		/*for (int i = 0; i < 8; i++) {
 			switch (rasterX) {	// Fine matches
 /*			case 496:
 				// ba for char fetch
@@ -117,11 +126,13 @@ public class Vic implements CrystalConsumer {
 					rasterLine = 0;
 					break;
 				}
-*/			}
+			}*/
 			int pixel = vBorder || hBorder ? borderColor : backColor;
 			assert pixel == (pixel & 0xf) : "Invalid pixel value " + pixel;
-			packed = (packed << 4) | pixel;
-		}
+			//packed = (packed << 4) | pixel;
+			packed = pixel * 0x11111111;	// duplicate to all pixels in block
+			rasterX++;
+//		}
 		pixelBuffer.set(rasterX, rasterY, packed);
 	}
 	
