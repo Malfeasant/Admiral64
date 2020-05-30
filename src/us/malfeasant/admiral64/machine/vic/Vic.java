@@ -29,9 +29,6 @@ public class Vic implements CrystalConsumer {
 	
 	private final FrameBuffer pixelBuffer;
 	
-	private final int vBottom = 251;	//	TODO: dependent on csel- alt 247
-	private final int vTop = 51;	//	TODO: dependent on csel- alt 55
-	
 	private boolean csel;
 	private boolean rsel;
 	
@@ -66,11 +63,13 @@ public class Vic implements CrystalConsumer {
 		case INC_Y:
 			rasterY++;
 			if (rasterY >= flavor.linesPerField) rasterY = 0;	// end of field, reset y counter
-			switch (rasterY) {
-			case vBottom:	// TODO: depends on rsel
+			switch (rasterY + (rsel ? 0x8000 : 0)) {	// a trick to minimize comparisons...
+			case 247:
+			case 251 + 0x8000:
 				vBorder = true;
 				break;
-			case vTop:
+			case 55:
+			case 51 + 0x8000:
 				vBorder = !dispEnable;
 				break;
 			}
@@ -78,21 +77,14 @@ public class Vic implements CrystalConsumer {
 		}
 		
 		for (int i = 0; i < 8; i++) {
-			switch (rasterX * 8 + i) {	// Fine matches
-			case 496:
-				// ba for char fetch
-				break;
+			switch (csel ? 0x8000 : 0 + rasterX * 8 + i) {	// Fine matches
 			case 35:
-				if (!csel) hBorder = false;
+			case 28 + 0x8000:
+				hBorder = false;
 				break;
 			case 339:
-				if (!csel) hBorder = true;
-				break;
-			case 28:
-				if (csel) hBorder = false;
-				break;
-			case 348:
-				if (csel) hBorder = true;
+			case 348 + 0x8000:
+				hBorder = true;
 				break;
 /*			case 12:	// These should be moved to rough match
 				// enable character fetch
@@ -106,6 +98,9 @@ public class Vic implements CrystalConsumer {
 				break;
 			case 376:
 				// end ba for sprite 0
+				break;
+			case 496:
+				// ba for char fetch
 				break;
 */			}
 			int pixel = vBorder || hBorder ? borderColor : backColor;
