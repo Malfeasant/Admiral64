@@ -21,12 +21,18 @@ public class FrameBuffer {
 	}
 	
 	public void set(int cycle, int line, int packed) {
-		assert cycle < cycles && line < lines : "Out of range.";
+		assert checkRange(cycle, line);
 		pixels[cycle + line * cycles] = packed;
 		pixels = pixels;	// Ensure the write is noticed by other threads	TODO: Experimental- verify it works as expected
 	}
 	public int get(int cycle, int line) {
-		assert cycle < cycles && line < lines : "Out of range.";
+		assert checkRange(cycle, line);
 		return pixels[cycle + line * cycles];
+	}
+	
+	private boolean checkRange(int cycle, int line) {
+		assert cycle < cycles : "Out of range: cycle = " + cycle + ", max = " + cycles + ".";
+		assert line < lines : "Out of range: line = " + line + ", max = " + lines + ".";
+		return true;
 	}
 }

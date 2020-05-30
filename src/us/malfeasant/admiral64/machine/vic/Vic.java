@@ -32,6 +32,9 @@ public class Vic implements CrystalConsumer {
 	private final int vBottom = 251;	//	TODO: dependent on csel- alt 247
 	private final int vTop = 51;	//	TODO: dependent on csel- alt 55
 	
+	private boolean csel;
+	private boolean rsel;
+	
 	private boolean hBorder;
 	private boolean vBorder;
 	private boolean dispEnable = true;
@@ -50,6 +53,7 @@ public class Vic implements CrystalConsumer {
 	
 	@Override
 	public void cycle() {
+		rasterX++;
 		currentCycle++;
 		if (currentCycle >= flavor.cyclesPerLine) currentCycle = 0;
 		
@@ -63,7 +67,7 @@ public class Vic implements CrystalConsumer {
 			rasterY++;
 			if (rasterY >= flavor.linesPerField) rasterY = 0;	// end of field, reset y counter
 			switch (rasterY) {
-			case vBottom:
+			case vBottom:	// TODO: depends on rsel
 				vBorder = true;
 				break;
 			case vTop:
@@ -73,34 +77,24 @@ public class Vic implements CrystalConsumer {
 			break;
 		}
 		
-		/*for (int i = 0; i < 8; i++) {
-			switch (rasterX) {	// Fine matches
-/*			case 496:
+		for (int i = 0; i < 8; i++) {
+			switch (rasterX * 8 + i) {	// Fine matches
+			case 496:
 				// ba for char fetch
 				break;
 			case 35:
-				// if (!csel) {
-				//	hBorder = false;
-				//	if (rasterLine == ybottom) vBorder = true;
-				// }
+				if (!csel) hBorder = false;
 				break;
 			case 339:
-				// if (!csel) hBorder = true;
+				if (!csel) hBorder = true;
 				break;
 			case 28:
-				// if csel
-				hBorder = false;
-				if (rasterLine == vBottom) vBorder = true;
-				if (rasterLine == vTop && dispEnable) vBorder = false;
+				if (csel) hBorder = false;
 				break;
 			case 348:
-				// if csel
-				hBorder = true;
+				if (csel) hBorder = true;
 				break;
-			case 412:	// actually anywhere between 404 and 412
-				rasterLine++;
-				break;
-			case 12:
+/*			case 12:	// These should be moved to rough match
 				// enable character fetch
 				break;
 			case 332:
@@ -113,26 +107,13 @@ public class Vic implements CrystalConsumer {
 			case 376:
 				// end ba for sprite 0
 				break;
-			case 519:
-				rasterCycle = 0;
-				switch (rasterLine) {
-				case vBottom:
-					vBorder = true;
-					break;
-				case vTop:
-					vBorder = !dispEnable;
-					break;
-				case 262:
-					rasterLine = 0;
-					break;
-				}
-			}*/
+*/			}
 			int pixel = vBorder || hBorder ? borderColor : backColor;
 			assert pixel == (pixel & 0xf) : "Invalid pixel value " + pixel;
-			//packed = (packed << 4) | pixel;
-			packed = pixel * 0x11111111;	// duplicate to all pixels in block
-			rasterX++;
-//		}
+			packed = (packed << 4) | pixel;
+			//packed = pixel * 0x11111111;	// duplicate to all pixels in block
+		}
+//		System.out.println("Calling buffer.set(rasterX = " + rasterX + ", rasterY = " + rasterY + ", packed = " + packed);
 		pixelBuffer.set(rasterX, rasterY, packed);
 	}
 	
