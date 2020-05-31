@@ -63,7 +63,7 @@ public class Vic implements CrystalConsumer {
 		case INC_Y:
 			rasterY++;
 			if (rasterY >= flavor.linesPerField) rasterY = 0;	// end of field, reset y counter
-			switch (rasterY + (rsel ? 0x8000 : 0)) {	// a trick to minimize comparisons...
+			switch (rsel ? 0x8000 : 0 + rasterY) {	// a trick to minimize comparisons...
 			case 247:
 			case 251 + 0x8000:
 				vBorder = true;
@@ -106,9 +106,7 @@ public class Vic implements CrystalConsumer {
 			int pixel = vBorder || hBorder ? borderColor : backColor;
 			assert pixel == (pixel & 0xf) : "Invalid pixel value " + pixel;
 			packed = (packed << 4) | pixel;
-			//packed = pixel * 0x11111111;	// duplicate to all pixels in block
 		}
-//		System.out.println("Calling buffer.set(rasterX = " + rasterX + ", rasterY = " + rasterY + ", packed = " + packed);
 		pixelBuffer.set(rasterX, rasterY, packed);
 	}
 	
