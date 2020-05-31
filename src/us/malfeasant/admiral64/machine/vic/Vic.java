@@ -8,10 +8,9 @@ public class Vic implements CrystalConsumer {
 	 * Thanks to http://www.unusedino.de/ec64/technical/misc/vic656x/vic656x.html for magic numbers
 	 * However, I'm fudging things a little- the 3 chips have different cycle lengths, and as described there,
 	 * the "first" cycle is when the raster register is updated- problem is then the cycle numbers
-	 * where certain things happen are shifted around.  To simplify, I'm taking cycle 0 to be the time 
-	 * when the Sprite 0 pointer is fetched, this way the only differences between the flavors are the number of
-	 * idle cycles at the end.  One challenge- asserting BA 3 cycles before, since that will be a different cycle
-	 * for each flavor... but I'll figure something out.
+	 * where certain things happen are shifted around.  To simplify, I'm taking cycle 0 to be 2 cycles before 
+	 * the Sprite 0 pointer is fetched, this way the only differences between the flavors are the number of
+	 * idle cycles at the end.
 	 */
 	public enum Flavor {
 		MOS6567R56A(64, 262), MOS6567R8(65, 263), MOS6569(63, 312);
@@ -24,38 +23,45 @@ public class Vic implements CrystalConsumer {
 	}
 	private final Flavor flavor;
 	
-	private final int RESET_X = 19;	// Cycle to reset display coordinate to 0	TODO: verify
-	private final int INC_Y = 6;	// Cycle to increment raster register
+	private static final int RESET_X = 17;	// Cycle to reset display coordinate to 0	TODO: verify
+	private static final int INC_Y = 4;	// Cycle to increment raster register
 	
 	private final FrameBuffer pixelBuffer;
 	
-	private boolean csel;
-	private boolean rsel;
+	// Used for smooth scrolling
+	private boolean csel = true;	// shrinks horizontal borders by 16px/2chars
+	private boolean rsel = true;	// shrinks vertical borders by 8px/1char
+	private int xscroll;	// Horizontal offset 0-7
+	private int yscroll;	// Vertical offset 0-7
 	
 	private boolean hBorder;
 	private boolean vBorder;
 	private boolean dispEnable = true;
+	private boolean denFrame;	// sampling of dEn at line 0x30, used for triggering badlines
 	
 	private int currentCycle;
 	private int rasterX;	// x coordinate
 	private int rasterY;	// y coordinate
-	private boolean badline;	// track if current line is a bad line (stall cpu for character fetches)
 	
-	private int borderColor = 0xe;
+	private int borderColor = 0xe;	// TODO: only setting this here for debug
 	private int backColor = 0x6;	// TODO: there are actually 4 background registers...
+	
+	private int ba = 3;	// Bus Available signal
+	// not a simple flag since it has to be cleared for 3 cycles (worst case) before the CPU stops
+	// 3 indicates the cpu has the bus, counts down from there.  0 indicates the vic has the bus.
+	// anything in between means the cpu has the bus, will finish a write but will not start a new cycle
 	
 	// Used for address generation
 	private int vc;	// video counter
 	private int vcBase;
 	private int rc;
 	
-	private final short[] lineBuffer;	// 12 significant bits- stores character pointers and color ram between bad lines
+	private final short[] lineBuffer = new short[40];	// stores character pointers and color ram between bad lines
 	private int vmli;	// index into above
 	
 	public Vic(Flavor f) {
 		flavor = f;
 		pixelBuffer = new FrameBuffer(f.cyclesPerLine, f.linesPerField);
-		lineBuffer = new short[40];
 	}
 	
 	@Override
@@ -64,9 +70,13 @@ public class Vic implements CrystalConsumer {
 		currentCycle++;
 		if (currentCycle >= flavor.cyclesPerLine) currentCycle = 0;
 		
+		// yes, these are checked every cycle:
+		if (rasterY == 0x30) denFrame |= dispEnable;	// see case 0x30 of raster switch for explanation
+		boolean badline = denFrame & (rasterY >= 0x30) & (rasterY <= 0xf7) & (rasterY & 7) == yscroll;
+		
 		int packed = 0;
 		
-		switch (currentCycle) {	// Rough matches- TODO: add when to assert BA for sprites & 
+		switch (currentCycle) {	// Rough matches- TODO: add when to assert BA for sprites &
 		case RESET_X:
 			rasterX = 0;
 			vc = vcBase;
@@ -80,28 +90,49 @@ public class Vic implements CrystalConsumer {
 				vcBase = 0;
 			}
 			// TODO: raster interrupt register compare
-			switch (rsel ? 0x8000 : 0 + rasterY) {	// a trick to minimize comparisons...
+			switch (rasterY) {
 			case 247:
-			case 251 + 0x8000:
-				vBorder = true;
+				if (!rsel) vBorder = true;	// logically distinct from vBorder = !rsel
+				break;
+			case 251:
+				if (rsel) vBorder = true;
 				break;
 			case 55:
-			case 51 + 0x8000:
-				vBorder = !dispEnable;
+				if (!rsel & dispEnable) vBorder = false;
+				break;
+			case 51:
+				if (rsel & dispEnable) vBorder = false;
+				break;
+			case 0x30:
+				denFrame = dispEnable;	// this is complicated...
+				// A Bad Line Condition can only occur if the DEN bit has been set for at
+				// least one cycle somewhere in raster line $30 (see section 3.5.).
+				// so it has to be checked every cycle...
 				break;
 			}
 			break;
+		default:	// all the crap that can't get its own case
+			if (currentCycle == flavor.cyclesPerLine - 1) {
+				// check if sprite 0 is enabled, if so ba--;
+			} else if (badline & currentCycle > 12 & currentCycle < 54) {	// TODO: fudge these numbers
+				ba--;	// enable character fetches
+			}
+			if (ba < 0) ba = 0;
 		}
 		
 		for (int i = 0; i < 8; i++) {
-			switch (csel ? 0x8000 : 0 + rasterX * 8 + i) {	// Fine matches
+			switch (rasterX * 8 + i) {	// Fine matches
 			case 35:
-			case 28 + 0x8000:
-				hBorder = false;
+				if (!csel) hBorder = false;
+				break;
+			case 28:
+				if (csel) hBorder = false;
 				break;
 			case 339:
-			case 348 + 0x8000:
-				hBorder = true;
+				if (!csel) hBorder = true;
+				break;
+			case 348:
+				if (csel) hBorder = true;
 				break;
 /*			case 12:	// These should be moved to rough match
 				// enable character fetch
@@ -121,6 +152,7 @@ public class Vic implements CrystalConsumer {
 				break;
 */			}
 			int pixel = vBorder || hBorder ? borderColor : backColor;
+			if (badline) pixel = 0xf;
 			assert pixel == (pixel & 0xf) : "Invalid pixel value " + pixel;
 			packed = (packed << 4) | pixel;
 		}
