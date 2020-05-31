@@ -24,7 +24,7 @@ public class Vic implements CrystalConsumer {
 	}
 	private final Flavor flavor;
 	
-	private final int RESET_X = 18;	// Cycle to reset x coordinate to 0	TODO: verify
+	private final int RESET_X = 19;	// Cycle to reset display coordinate to 0	TODO: verify
 	private final int INC_Y = 6;	// Cycle to increment raster register
 	
 	private final FrameBuffer pixelBuffer;
@@ -39,13 +39,23 @@ public class Vic implements CrystalConsumer {
 	private int currentCycle;
 	private int rasterX;	// x coordinate
 	private int rasterY;	// y coordinate
+	private boolean badline;	// track if current line is a bad line (stall cpu for character fetches)
 	
 	private int borderColor = 0xe;
 	private int backColor = 0x6;	// TODO: there are actually 4 background registers...
 	
+	// Used for address generation
+	private int vc;	// video counter
+	private int vcBase;
+	private int rc;
+	
+	private final short[] lineBuffer;	// 12 significant bits- stores character pointers and color ram between bad lines
+	private int vmli;	// index into above
+	
 	public Vic(Flavor f) {
 		flavor = f;
 		pixelBuffer = new FrameBuffer(f.cyclesPerLine, f.linesPerField);
+		lineBuffer = new short[40];
 	}
 	
 	@Override
@@ -59,10 +69,17 @@ public class Vic implements CrystalConsumer {
 		switch (currentCycle) {	// Rough matches- TODO: add when to assert BA for sprites & 
 		case RESET_X:
 			rasterX = 0;
+			vc = vcBase;
+			vmli = 0;
+			if (badline) rc = 0;
 			break;
 		case INC_Y:
 			rasterY++;
-			if (rasterY >= flavor.linesPerField) rasterY = 0;	// end of field, reset y counter
+			if (rasterY >= flavor.linesPerField) {
+				rasterY = 0;	// end of field, reset y counter
+				vcBase = 0;
+			}
+			// TODO: raster interrupt register compare
 			switch (rsel ? 0x8000 : 0 + rasterY) {	// a trick to minimize comparisons...
 			case 247:
 			case 251 + 0x8000:
