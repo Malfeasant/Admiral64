@@ -111,11 +111,21 @@ public class Vic implements CrystalConsumer {
 				break;
 			}
 			break;
+		case 58:	// TODO fudge
+			if (rc==7) vcBase = vc;
+			else rc++;
+			break;
 		default:	// all the crap that can't get its own case
-			if (currentCycle == flavor.cyclesPerLine - 1) {
+			if (currentCycle == flavor.cyclesPerLine - 1) {	// can't make a non-constant case...
 				// check if sprite 0 is enabled, if so ba--;
-			} else if (badline & currentCycle > 12 & currentCycle < 54) {	// TODO: fudge these numbers
-				ba--;	// enable character fetches
+			} else if (currentCycle <= 55) {	// TODO: fudge these numbers
+				if (currentCycle >= 12 & badline) ba--;	// enable character fetches
+				if (currentCycle >= 15) {	// TODO: more fudging...
+					if (badline) {
+						// c-read
+					}
+					// g-read
+				}
 			}
 			if (ba < 0) ba = 0;
 		}
@@ -134,23 +144,7 @@ public class Vic implements CrystalConsumer {
 			case 348:
 				if (csel) hBorder = true;
 				break;
-/*			case 12:	// These should be moved to rough match
-				// enable character fetch
-				break;
-			case 332:
-				// disable character fetch
-				// disable ba for char fetch
-				break;
-			case 336:
-				// ba for sprite 0
-				break;
-			case 376:
-				// end ba for sprite 0
-				break;
-			case 496:
-				// ba for char fetch
-				break;
-*/			}
+			}
 			int pixel = vBorder || hBorder ? borderColor : backColor;
 			if (badline) pixel = 0xf;
 			assert pixel == (pixel & 0xf) : "Invalid pixel value " + pixel;
