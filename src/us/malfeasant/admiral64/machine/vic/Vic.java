@@ -44,6 +44,11 @@ public class Vic implements CrystalConsumer {
 	private int rasterX;	// x coordinate
 	private int rasterY;	// y coordinate
 	
+	// mode bits:
+	private boolean bmm;	// 0 = text, 1 = bitmap 
+	private boolean mcm;	// multicolor
+	private boolean ecm;	// extended color
+	
 	private int borderColor = 0xe;	// TODO: only setting this here for debug
 	private int backColor = 0x6;	// TODO: there are actually 4 background registers...
 	
@@ -57,8 +62,14 @@ public class Vic implements CrystalConsumer {
 	private int vcBase;
 	private int rc;
 	
+	private int vmi;	// 4 bits video matrix pointer- i.e. where text screen memory is located
+	private int cb;	// 3 bits character base- i.e. base of char pointers in text mode, top bit base of bitmap screen
+	
 	private final short[] lineBuffer = new short[40];	// stores character pointers and color ram between bad lines
 	private int vmli;	// index into above
+	
+	private long delay;	// ring buffers graphics pixels (but not sprites or border/bg transitions)- 4-bit pixels are
+	// put in LSN after shifting left. Pixels are taken from a position adjusted by horizontal smooth scroll offset.
 	
 	public Vic(Flavor f) {
 		flavor = f;
@@ -81,7 +92,9 @@ public class Vic implements CrystalConsumer {
 		if (rasterY == 0x30) denFrame |= dispEnable;	// see case 0x30 of raster switch for explanation
 		boolean badline = denFrame & (rasterY >= 0x30) & (rasterY <= 0xf7) & (rasterY & 7) == yscroll;
 		
-		int packed = 0;
+		int cdata = 0;	// bytes read during cycle loop needs to be processed in pixel loop
+		int gdata = 0;
+		int packed = 0;	// pixels being displayed this cycle
 		
 		switch (currentCycle) {	// Rough matches- TODO: add when to assert BA for sprites &
 		case RESET_X:
@@ -129,13 +142,18 @@ public class Vic implements CrystalConsumer {
 				if (currentCycle >= 12 & badline) ba = (ba == 0) ? 0 : ba - 1;	// enable character fetches
 				if (currentCycle >= 15) {	// TODO: more fudging...
 					if (badline) {
-						lineBuffer[vmli] = (short) bus.read12(0);	// TODO: address calculation
+						lineBuffer[vmli] = (short) bus.read12((vmi << 10) | vc);
 					}
-					int c = lineBuffer[vmli];
-					int g = bus.read8(0);	// TODO: address calculation (will use c- depends on mode)
+					cdata = lineBuffer[vmli++];	// and increment the index
+					int addr = bmm ? (cb >> 2) << 13 | vc << 3 | rc : cb << 10 | (cdata & 0xff) << 3 | rc;
+					// if bitmap mode, cb high bit points to one of two 8k pages, vc is used directly
+					// as an index into that page, with rc added after
+					// if text mode, cb picks one of 8 2k character generator blocks, then 8-bit char pointer picks
+					// a character, rc selects which row of the character gets displayed.
+					if (ecm) addr &= 0x39ff;	// ecm sacrifices some characters for more colors
+					gdata = bus.read8(addr);
 				}
 			}
-			if (ba < 0) ba = 0;
 		}
 		
 		for (int i = 0; i < 8; i++) {
@@ -153,8 +171,20 @@ public class Vic implements CrystalConsumer {
 				if (csel) hBorder = true;
 				break;
 			}
-			int pixel = vBorder || hBorder ? borderColor : backColor;
-			if (badline) pixel = 0xf;
+			int pixel = 0;	// border or valid modes will overwrite this
+			boolean foreground;	// if this pixel is distinguished from the background for collisions, priority
+			// overrides all others, don't bother calculating any other graphics or collisions if border is shown:
+			if (vBorder || hBorder) pixel = borderColor;
+			else {
+				
+				// background:
+				
+				
+				// sprites:
+				
+			}
+			
+			if (badline) pixel = 0xf;	// debug
 			assert pixel == (pixel & 0xf) : "Invalid pixel value " + pixel;
 			packed = (packed << 4) | pixel;
 		}
