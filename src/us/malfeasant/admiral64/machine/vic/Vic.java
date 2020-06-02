@@ -1,6 +1,7 @@
 package us.malfeasant.admiral64.machine.vic;
 
 import us.malfeasant.admiral64.console.FrameBuffer;
+import us.malfeasant.admiral64.machine.bus.Bus;
 import us.malfeasant.admiral64.timing.CrystalConsumer;
 
 public class Vic implements CrystalConsumer {
@@ -29,8 +30,8 @@ public class Vic implements CrystalConsumer {
 	private final FrameBuffer pixelBuffer;
 	
 	// Used for smooth scrolling
-	private boolean csel = true;	// shrinks horizontal borders by 16px/2chars
-	private boolean rsel = true;	// shrinks vertical borders by 8px/1char
+	private boolean csel;	// shrinks horizontal borders by 16px/2chars
+	private boolean rsel;	// shrinks vertical borders by 8px/1char
 	private int xscroll;	// Horizontal offset 0-7
 	private int yscroll;	// Vertical offset 0-7
 	
@@ -62,6 +63,12 @@ public class Vic implements CrystalConsumer {
 	public Vic(Flavor f) {
 		flavor = f;
 		pixelBuffer = new FrameBuffer(f.cyclesPerLine, f.linesPerField);
+	}
+	
+	private Bus.VicBus bus;
+	
+	public void connectBus(Bus.VicBus b) {
+		bus = b;
 	}
 	
 	@Override
@@ -119,12 +126,13 @@ public class Vic implements CrystalConsumer {
 			if (currentCycle == flavor.cyclesPerLine - 1) {	// can't make a non-constant case...
 				// check if sprite 0 is enabled, if so ba--;
 			} else if (currentCycle <= 55) {	// TODO: fudge these numbers
-				if (currentCycle >= 12 & badline) ba--;	// enable character fetches
+				if (currentCycle >= 12 & badline) ba = (ba == 0) ? 0 : ba - 1;	// enable character fetches
 				if (currentCycle >= 15) {	// TODO: more fudging...
 					if (badline) {
-						// c-read
+						lineBuffer[vmli] = (short) bus.read12(0);	// TODO: address calculation
 					}
-					// g-read
+					int c = lineBuffer[vmli];
+					int g = bus.read8(0);	// TODO: address calculation (will use c- depends on mode)
 				}
 			}
 			if (ba < 0) ba = 0;
