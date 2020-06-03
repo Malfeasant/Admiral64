@@ -50,12 +50,16 @@ public class Vic implements CrystalConsumer {
 	private boolean ecm;	// extended color
 	
 	private int borderColor = 0xe;	// TODO: only setting this here for debug
-	private int backColor = 0x6;	// TODO: there are actually 4 background registers...
+	private final int[] backColor = new int[] {
+			6, 0, 0, 0,	// TODO: defaults?
+	};
 	
 	private int ba = 3;	// Bus Available signal
 	// not a simple flag since it has to be cleared for 3 cycles (worst case) before the CPU stops
 	// 3 indicates the cpu has the bus, counts down from there.  0 indicates the vic has the bus.
 	// anything in between means the cpu has the bus, will finish a write but will not start a new cycle
+	
+	private boolean active;	// if graphics sequencer is active- goes inactive outside viewing area
 	
 	// Used for address generation
 	private int vc;	// video counter
@@ -91,6 +95,7 @@ public class Vic implements CrystalConsumer {
 		// yes, these are checked every cycle:
 		if (rasterY == 0x30) denFrame |= dispEnable;	// see case 0x30 of raster switch for explanation
 		boolean badline = denFrame & (rasterY >= 0x30) & (rasterY <= 0xf7) & (rasterY & 7) == yscroll;
+		active |= badline;
 		
 		int cdata = 0;	// bytes read during cycle loop needs to be processed in pixel loop
 		int gdata = 0;
@@ -131,25 +136,28 @@ public class Vic implements CrystalConsumer {
 				break;
 			}
 			break;
-		case 58:	// TODO fudge
-			if (rc==7) vcBase = vc;
-			else rc++;
+		case 2:
+			if (rc==7) {
+				vcBase = vc;
+				if (!badline) active = false;
+			} else rc++;
 			break;
 		default:	// all the crap that can't get its own case
 			if (currentCycle == flavor.cyclesPerLine - 1) {	// can't make a non-constant case...
 				// check if sprite 0 is enabled, if so ba--;
-			} else if (currentCycle <= 55) {	// TODO: fudge these numbers
-				if (currentCycle >= 12 & badline) ba = (ba == 0) ? 0 : ba - 1;	// enable character fetches
-				if (currentCycle >= 15) {	// TODO: more fudging...
+			} else if (currentCycle <= 62) {
+				if (currentCycle >= 19 & badline) ba = (ba == 0) ? 0 : ba - 1;	// enable character fetches
+				if (currentCycle >= 26) {
 					if (badline) {
 						lineBuffer[vmli] = (short) bus.read12((vmi << 10) | vc);
 					}
-					cdata = lineBuffer[vmli++];	// and increment the index
-					int addr = bmm ? (cb >> 2) << 13 | vc << 3 | rc : cb << 10 | (cdata & 0xff) << 3 | rc;
+					cdata = active ? lineBuffer[vmli++] : 0;	// and increment the index
+					int addr = active ? bmm ? (cb >> 2) << 13 | vc << 3 | rc : cb << 10 | (cdata & 0xff) << 3 | rc : 0x3fff;
 					// if bitmap mode, cb high bit points to one of two 8k pages, vc is used directly
 					// as an index into that page, with rc added after
 					// if text mode, cb picks one of 8 2k character generator blocks, then 8-bit char pointer picks
 					// a character, rc selects which row of the character gets displayed.
+					// if inactive, address floats to 0x3fff
 					if (ecm) addr &= 0x39ff;	// ecm sacrifices some characters for more colors
 					gdata = bus.read8(addr);
 				}
@@ -173,11 +181,14 @@ public class Vic implements CrystalConsumer {
 			}
 			int pixel = 0;	// border or valid modes will overwrite this
 			boolean foreground;	// if this pixel is distinguished from the background for collisions, priority
+			// because multicolor mode is weird- 00, 01 are background, 10, 11 are foreground
+			
+			
 			// overrides all others, don't bother calculating any other graphics or collisions if border is shown:
-			if (vBorder || hBorder) pixel = borderColor;
+			if (vBorder || hBorder) pixel = borderColor;	// this also covers the display disabled case
 			else {
 				
-				// background:
+				// background graphics:
 				
 				
 				// sprites:
@@ -185,6 +196,8 @@ public class Vic implements CrystalConsumer {
 			}
 			
 			if (badline) pixel = 0xf;	// debug
+			if (active & i == 7) pixel = 0xc;	// more debug
+			
 			assert pixel == (pixel & 0xf) : "Invalid pixel value " + pixel;
 			packed = (packed << 4) | pixel;
 		}
