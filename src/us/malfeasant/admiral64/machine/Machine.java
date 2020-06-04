@@ -5,6 +5,7 @@ import java.io.IOException;
 import us.malfeasant.admiral64.Configuration;
 import us.malfeasant.admiral64.console.FrameBuffer;
 import us.malfeasant.admiral64.machine.vic.Vic;
+import us.malfeasant.admiral64.timing.CrystalConsumer;
 import us.malfeasant.admiral64.timing.TimingGenerator;
 import us.malfeasant.admiral64.machine.bus.Bus;
 import us.malfeasant.admiral64.machine.bus.Chipset;
@@ -42,7 +43,16 @@ public class Machine {
 	public void connectTiming(TimingGenerator tg) {
 		tg.addCrystalConsumer(chips.cia1);
 		tg.addCrystalConsumer(chips.cia2);
-		tg.addCrystalConsumer(chips.vic);
+		//tg.addCrystalConsumer(chips.vic);	// Need to proxy Vic & CPU to allow vic's flags to affect cpu...
+		tg.addCrystalConsumer(new CrystalConsumer() {
+			@Override
+			public void cycle() {
+				chips.vic.cycle();
+				boolean rdy = chips.vic.getBA();
+				boolean aec = chips.vic.getAEC();
+				// TODO: set these flags in CPU, cycle it
+			}
+		});
 		tg.addPowerConsumer(chips.cia1);
 		tg.addPowerConsumer(chips.cia2);
 	}

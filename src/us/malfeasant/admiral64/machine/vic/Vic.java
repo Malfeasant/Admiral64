@@ -2,9 +2,11 @@ package us.malfeasant.admiral64.machine.vic;
 
 import us.malfeasant.admiral64.console.FrameBuffer;
 import us.malfeasant.admiral64.machine.bus.Bus;
+import us.malfeasant.admiral64.machine.bus.Peekable;
+import us.malfeasant.admiral64.machine.bus.Pokeable;
 import us.malfeasant.admiral64.timing.CrystalConsumer;
 
-public class Vic implements CrystalConsumer {
+public class Vic implements CrystalConsumer, Peekable, Pokeable {
 	/**
 	 * Thanks to http://www.unusedino.de/ec64/technical/misc/vic656x/vic656x.html for magic numbers
 	 * However, I'm fudging things a little- the 3 chips have different cycle lengths, and as described there,
@@ -24,16 +26,17 @@ public class Vic implements CrystalConsumer {
 	}
 	private final Flavor flavor;
 	
-	private static final int RESET_X = 17;	// Cycle to reset display coordinate to 0	TODO: verify
+	private static final int RESET_X = 21;	// Cycle to reset display coordinate to 0 as well as address counters (vc, vmli)
 	private static final int INC_Y = 4;	// Cycle to increment raster register
 	
 	private final FrameBuffer pixelBuffer;
+	private final BusControl control = new BusControl();	// manages ba, aec
 	
 	// Used for smooth scrolling
-	private boolean csel;	// shrinks horizontal borders by 16px/2chars
-	private boolean rsel;	// shrinks vertical borders by 8px/1char
+	private boolean csel = true;	// shrinks horizontal borders by 16px/2chars
+	private boolean rsel = true;	// shrinks vertical borders by 8px/1char
 	private int xscroll;	// Horizontal offset 0-7
-	private int yscroll;	// Vertical offset 0-7
+	private int yscroll = 3;	// Vertical offset 0-7
 	
 	private boolean hBorder;
 	private boolean vBorder;
@@ -54,12 +57,8 @@ public class Vic implements CrystalConsumer {
 			6, 0, 0, 0,	// TODO: defaults?
 	};
 	
-	private int ba = 3;	// Bus Available signal
-	// not a simple flag since it has to be cleared for 3 cycles (worst case) before the CPU stops
-	// 3 indicates the cpu has the bus, counts down from there.  0 indicates the vic has the bus.
-	// anything in between means the cpu has the bus, will finish a write but will not start a new cycle
-	
-	private boolean active;	// if graphics sequencer is active- goes inactive outside viewing area
+	private boolean vActive;	// if graphics sequencer is active- goes inactive outside viewing area
+	private boolean hActive;	// same, but within lines
 	
 	// Used for address generation
 	private int vc;	// video counter
@@ -88,6 +87,7 @@ public class Vic implements CrystalConsumer {
 	
 	@Override
 	public void cycle() {
+		control.cycle();	// update ba, aec
 		rasterX++;
 		currentCycle++;
 		if (currentCycle >= flavor.cyclesPerLine) currentCycle = 0;
@@ -95,7 +95,7 @@ public class Vic implements CrystalConsumer {
 		// yes, these are checked every cycle:
 		if (rasterY == 0x30) denFrame |= dispEnable;	// see case 0x30 of raster switch for explanation
 		boolean badline = denFrame & (rasterY >= 0x30) & (rasterY <= 0xf7) & (rasterY & 7) == yscroll;
-		active |= badline;
+		vActive |= badline;
 		
 		int cdata = 0;	// bytes read during cycle loop needs to be processed in pixel loop
 		int gdata = 0;
@@ -139,28 +139,28 @@ public class Vic implements CrystalConsumer {
 		case 2:
 			if (rc==7) {
 				vcBase = vc;
-				if (!badline) active = false;
+				if (!badline) vActive = false;
 			} else rc++;
 			break;
 		default:	// all the crap that can't get its own case
+			hActive = currentCycle <= 61 & currentCycle >= 22;
+			control.setStun(BusControl.CHAR_BA, currentCycle <= 61 & currentCycle >= 19 & badline);	// enable character fetches
 			if (currentCycle == flavor.cyclesPerLine - 1) {	// can't make a non-constant case...
 				// check if sprite 0 is enabled, if so ba--;
-			} else if (currentCycle <= 62) {
-				if (currentCycle >= 19 & badline) ba = (ba == 0) ? 0 : ba - 1;	// enable character fetches
-				if (currentCycle >= 26) {
-					if (badline) {
-						lineBuffer[vmli] = (short) bus.read12((vmi << 10) | vc);
-					}
-					cdata = active ? lineBuffer[vmli++] : 0;	// and increment the index
-					int addr = active ? bmm ? (cb >> 2) << 13 | vc << 3 | rc : cb << 10 | (cdata & 0xff) << 3 | rc : 0x3fff;
-					// if bitmap mode, cb high bit points to one of two 8k pages, vc is used directly
-					// as an index into that page, with rc added after
-					// if text mode, cb picks one of 8 2k character generator blocks, then 8-bit char pointer picks
-					// a character, rc selects which row of the character gets displayed.
-					// if inactive, address floats to 0x3fff
-					if (ecm) addr &= 0x39ff;	// ecm sacrifices some characters for more colors
-					gdata = bus.read8(addr);
+			}
+			if (hActive) {
+				if (badline) {	// this really should come after gdata, but causes buffer overrun- gotta figure it out
+					lineBuffer[vmli] = (short) bus.read12((vmi << 10) | vc);
 				}
+				cdata = vActive ? lineBuffer[vmli++] : 0;	// and increment the index
+				int addr = vActive ? bmm ? (cb >> 2) << 13 | vc << 3 | rc : cb << 10 | (cdata & 0xff) << 3 | rc : 0x3fff;
+				// if bitmap mode, cb high bit points to one of two 8k pages, vc is used directly
+				// as an index into that page, with rc added after
+				// if text mode, cb picks one of 8 2k character generator blocks, then 8-bit char pointer picks
+				// a character, rc selects which row of the character gets displayed.
+				// if inactive, address floats to 0x3fff
+				if (ecm) addr &= 0x39ff;	// ecm sacrifices some characters for more colors
+				gdata = bus.read8(addr);
 			}
 		}
 		
@@ -195,8 +195,8 @@ public class Vic implements CrystalConsumer {
 				
 			}
 			
-			if (badline) pixel = 0xf;	// debug
-			if (active & i == 7) pixel = 0xc;	// more debug
+			if (badline & (i & 1) != 0) pixel = 0xf;	// debug
+			if (hActive & i == 0) pixel = 0xc;	// more debug
 			
 			assert pixel == (pixel & 0xf) : "Invalid pixel value " + pixel;
 			packed = (packed << 4) | pixel;
@@ -204,7 +204,34 @@ public class Vic implements CrystalConsumer {
 		pixelBuffer.set(rasterX, rasterY, packed);
 	}
 	
+	/**
+	 * Query the AEC line- expected to be called by (on behalf of?) CPU
+	 * @return status of AEC signal- false: cpu can not affect the bus
+	 */
+	public boolean getAEC() {
+		return control.getAEC();
+	}
+	
+	/**
+	 * Query the BA line- expected to be called by (on behalf of?) CPU
+	 * @return status of BA signal- false: cpu stops read immediately, write completes within 3 cycles
+	 */
+	public boolean getBA() {
+		return control.getBA();
+	}
+	
 	public FrameBuffer getFrameBuffer() {
 		return pixelBuffer;
+	}
+
+	@Override
+	public void poke(int addr, int data) {
+		// TODO: implement registers
+	}
+
+	@Override
+	public int peek(int addr) {
+		// TODO: implement registers
+		return 0;
 	}
 }

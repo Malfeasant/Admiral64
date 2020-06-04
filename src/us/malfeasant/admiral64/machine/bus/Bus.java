@@ -5,7 +5,6 @@ package us.malfeasant.admiral64.machine.bus;
  * @author Malfeasant
  */
 public class Bus {
-	private boolean ba;	// Bus Available signal- CPU is permitted to drive the bus when true
 	private boolean irq;
 	private boolean nmi;
 	
@@ -43,20 +42,17 @@ public class Bus {
 			return read(addr) & 0xff;
 		}
 		/**
-		 * Wide read- used for character fetches.  ba must be high.  only happens when clock high.
+		 * Wide read- used for character fetches.  BA & AEC should be low.  Only happens when clock high.
 		 * @param addr address to read
 		 * @return 12 bits- low 8 bits is char pointer, high 4 comes from color RAM 
 		 */
 		public int read12(int addr) {
-			assert(!ba) : "Cycle stolen without BA.";
+			assert(!chips.vic.getAEC()) : "Cycle stolen without CPU stun.";
 			return read(addr) & 0xfff;
 		}
 		private int read(int addr) {
 			assert (addr == (addr & 0x3fff)) : "VIC set impossible address: " + addr;
 			return 0;	// TODO: guts
-		}
-		private void setBa(boolean ba) {
-			Bus.this.ba = ba;
 		}
 	}
 	

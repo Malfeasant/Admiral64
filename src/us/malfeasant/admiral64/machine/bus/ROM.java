@@ -3,7 +3,7 @@ package us.malfeasant.admiral64.machine.bus;
 /**
  *	Kernal/Basic/Char ROMs will use this to load their contents, as well as possible cartridge ROMs.
  */
-public class ROM {
+public class ROM implements Peekable {
 	private final byte[] bytes;
 	private final int addrMask;
 	
@@ -13,6 +13,7 @@ public class ROM {
 		bytes = contents;
 	}
 	
+	@Override
 	public int peek(int addr) {
 		assert addr == (addr & addrMask) : "ROM: Address out of range.";
 		addr &= addrMask;

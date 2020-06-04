@@ -1,10 +1,12 @@
 package us.malfeasant.admiral64.machine.cia;
 
+import us.malfeasant.admiral64.machine.bus.Peekable;
+import us.malfeasant.admiral64.machine.bus.Pokeable;
 import us.malfeasant.admiral64.machine.cia.RTC.Mode;
 import us.malfeasant.admiral64.timing.CrystalConsumer;
 import us.malfeasant.admiral64.timing.PowerConsumer;
 
-public class CIA implements CrystalConsumer, PowerConsumer {
+public class CIA implements CrystalConsumer, PowerConsumer, Peekable, Pokeable {
 	private final RTC rtc;
 	
 	private int ticks;
@@ -30,5 +32,16 @@ public class CIA implements CrystalConsumer, PowerConsumer {
 	@Override
 	public void cycle() {
 		// TODO implement timer logic
+	}
+
+	@Override
+	public void poke(int addr, int data) {
+		// TODO: implement registers
+	}
+
+	@Override
+	public int peek(int addr) {
+		// TODO: implement registers
+		return 0;
 	}
 }
