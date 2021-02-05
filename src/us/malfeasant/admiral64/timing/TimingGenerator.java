@@ -65,7 +65,8 @@ public class TimingGenerator {
 		
 		for (int cycle = 0; cycle < cycles; cycle++) {
 			for (CrystalConsumer cc : crystalConsumers) {
-				cc.cycle();
+				cc.negEdge();
+				cc.posEdge();
 			}
 		}
 		

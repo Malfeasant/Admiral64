@@ -65,7 +65,7 @@ public class Vic implements CrystalConsumer, Peekable, Pokeable {
 	private int vcBase;
 	private int rc;
 	
-	private int vmi;	// 4 bits video matrix pointer- i.e. where text screen memory is located
+	private int vm;	// 4 bits video matrix pointer- i.e. where text screen memory is located
 	private int cb;	// 3 bits character base- i.e. base of char pointers in text mode, top bit base of bitmap screen
 	
 	private final short[] lineBuffer = new short[40];	// stores character pointers and color ram between bad lines
@@ -73,6 +73,7 @@ public class Vic implements CrystalConsumer, Peekable, Pokeable {
 	
 	private long delay;	// ring buffers graphics pixels (but not sprites or border/bg transitions)- 4-bit pixels are
 	// put in LSN after shifting left. Pixels are taken from a position adjusted by horizontal smooth scroll offset.
+	private int pixels;	// ring buffers all pixels before passing block of 8 to framebuffer
 	
 	public Vic(Flavor f) {
 		flavor = f;
@@ -85,21 +86,17 @@ public class Vic implements CrystalConsumer, Peekable, Pokeable {
 		bus = b;
 	}
 	
-	@Override
-	public void cycle() {
-		control.cycle();	// update ba, aec
-		rasterX++;
-		currentCycle++;
-		if (currentCycle >= flavor.cyclesPerLine) currentCycle = 0;
+	private void emitPixel(int p) {	// splitting this out since it needs to be done in both half cycles
+		assert ((p & 0xf) == p) : "Bad pixel: " + p + "\nMust be 4 bits.";
+		pixels = pixels << 4 | p;
+	}
+	
+	private void halfCycle() {	// anything that happens the same on every half cycle...
 		
 		// yes, these are checked every cycle:
 		if (rasterY == 0x30) denFrame |= dispEnable;	// see case 0x30 of raster switch for explanation
 		boolean badline = denFrame & (rasterY >= 0x30) & (rasterY <= 0xf7) & (rasterY & 7) == yscroll;
 		vActive |= badline;
-		
-		int cdata = 0;	// bytes read during cycle loop needs to be processed in pixel loop
-		int gdata = 0;
-		int packed = 0;	// pixels being displayed this cycle
 		
 		switch (currentCycle) {	// Rough matches- TODO: add when to assert BA for sprites &
 		case RESET_X:
@@ -150,17 +147,17 @@ public class Vic implements CrystalConsumer, Peekable, Pokeable {
 			}
 			if (hActive) {
 				if (badline) {	// this really should come after gdata, but causes buffer overrun- gotta figure it out
-					lineBuffer[vmli] = (short) bus.read12((vmi << 10) | vc);
+					lineBuffer[vmli] = (short) bus.read12((vm << 10) | vc);
 				}
-				cdata = vActive ? lineBuffer[vmli++] : 0;	// and increment the index
-				int addr = vActive ? bmm ? (cb >> 2) << 13 | vc << 3 | rc : cb << 10 | (cdata & 0xff) << 3 | rc : 0x3fff;
+				//cdata = vActive ? lineBuffer[vmli++] : 0;	// and increment the index
+				//int addr = vActive ? bmm ? (cb >> 2) << 13 | vc << 3 | rc : cb << 10 | (cdata & 0xff) << 3 | rc : 0x3fff;
 				// if bitmap mode, cb high bit points to one of two 8k pages, vc is used directly
 				// as an index into that page, with rc added after
 				// if text mode, cb picks one of 8 2k character generator blocks, then 8-bit char pointer picks
 				// a character, rc selects which row of the character gets displayed.
 				// if inactive, address floats to 0x3fff
-				if (ecm) addr &= 0x39ff;	// ecm sacrifices some characters for more colors
-				gdata = bus.read8(addr);
+				//if (ecm) addr &= 0x39ff;	// ecm sacrifices some characters for more colors
+				//gdata = bus.read8(addr);
 			}
 		}
 		
@@ -199,9 +196,9 @@ public class Vic implements CrystalConsumer, Peekable, Pokeable {
 			if (hActive & i == 0) pixel = 0xc;	// more debug
 			
 			assert pixel == (pixel & 0xf) : "Invalid pixel value " + pixel;
-			packed = (packed << 4) | pixel;
+			pixels = (pixels << 4) | pixel;
 		}
-		pixelBuffer.set(rasterX, rasterY, packed);
+		pixelBuffer.set(rasterX, rasterY, pixels);
 	}
 	
 	/**
@@ -226,12 +223,174 @@ public class Vic implements CrystalConsumer, Peekable, Pokeable {
 
 	@Override
 	public void poke(int addr, int data) {
-		// TODO: implement registers
+		switch (addr & 0x3f) {	// 1k block, but vic only looks at lowest 6 bits, so registers repeat every 64b
+		// TODO: 0-10 sprite positions
+		case 0x11:	// 53265
+			yscroll = (data & 7);
+			rsel = (data & 8) > 0;
+			dispEnable = (data & 0x10) > 0;
+			bmm = (data & 0x20) > 0;
+			ecm = (data & 0x40) > 0;
+			// TODO: bit 7 is high bit of raster compare reg
+			break;
+		case 0x12:	// 53266
+			// TODO raster compare reg
+			break;
+		case 0x13:	// 53267
+		case 0x14:	// 53268
+			// Light pen- write likely has no effect
+			break;
+		case 0x15:	// 53269
+			// TODO: sprite enable
+			break;
+		case 0x16:	// 53270
+			xscroll = (data & 7);
+			csel = (data & 8) > 0;
+			mcm = (data & 0x10) > 0;
+			// bit 5 = reset- no apparent effect
+			// bit 6/7 unused
+			break;
+		case 0x17:	// 53271
+			// TODO sprite y expand
+			break;
+		case 0x18:	// 53272
+			// bit 0 unused
+			cb = (data >> 1) & 7;	// character base pointer
+			vm = data >> 4;	// video matrix pointer
+			break;
+		case 0x19:	// 53273
+			// TODO: interrupt source bits
+			break;
+		case 0x1a:	// 53274
+			// TODO: interrupt mask
+			break;
+		case 0x1b:	// 53275
+			// TODO: sprite to foreground priority
+			break;
+		case 0x1c:	// 53276
+			// TODO: sprite multicolor mode
+			break;
+		case 0x1d:	// 53277
+			// TODO: sprite x expand
+			break;
+		case 0x1e:	// 53278
+			// TODO: sprite to sprite collision
+			break;
+		case 0x1f:	// 53279
+			// TODO: sprite to foreground collision
+			break;
+		default:	// the rest are color registers so get special handling
+			colorPoke(addr, data);
+		}
 	}
-
+	
+	private void colorPoke(int addr, int data) {	// helper- avoids having & 0xf everywhere
+		data &= 0xf;
+		switch (addr) {
+		case 0x20:	// 53280
+			borderColor = data;
+			break;
+		case 0x21:	// 53281
+		case 0x22:	// 53282	used for bitmap multicolor & extended color
+		case 0x23:	// 53283	used for bitmap multicolor & extended color
+		case 0x24:	// 53284	used for extended color
+			backColor[addr - 0x21] = data;
+			break;
+		// TODO: 25-26 sprite mc
+		// TODO: 27-2e sprite color
+		default:	// the rest are not connected, write does nothing
+		}
+	}
+	
 	@Override
 	public int peek(int addr) {
-		// TODO: implement registers
-		return 0;
+		int data = 0;
+		switch (addr & 0x3f) {	// 1k block, but vic only looks at lowest 6 bits, so registers repeat every 64b
+		// TODO: 0-10 sprite positions
+		case 0x11:	// 53265
+			data = (ecm ? 0x40 : 0) | (bmm ? 0x20 : 0) | (dispEnable ? 0x10 : 0) | (rsel ? 8 : 0) | yscroll;
+			// TODO: bit 7 is high bit of raster reg
+			break;
+		case 0x12:	// 53266
+			// TODO raster reg
+			break;
+		case 0x13:	// 53267
+			// TODO: Light pen x
+			break;
+		case 0x14:	// 53268
+			// TODO: Light pen y
+			break;
+		case 0x15:	// 53269
+			// TODO: sprite enable
+			break;
+		case 0x16:	// 53270
+			data = 0xc0 | (mcm ? 0x10 : 0) | (csel ? 8 : 0) | xscroll;
+			// bit 6/7 unused- bit 5 is reset, unclear if that gets used anywhere... TODO?
+			break;
+		case 0x17:	// 53271
+			// TODO sprite y expand
+			break;
+		case 0x18:	// 53272
+			data = (vm << 4) | (cb << 1) | 1;
+			// bit 0 unused, always reads 1
+			break;
+		case 0x19:	// 53273
+			// TODO: interrupt source bits
+			break;
+		case 0x1a:	// 53274
+			// TODO: interrupt mask
+			break;
+		case 0x1b:	// 53275
+			// TODO: sprite to foreground priority
+			break;
+		case 0x1c:	// 53276
+			// TODO: sprite multicolor mode
+			break;
+		case 0x1d:	// 53277
+			// TODO: sprite x expand
+			break;
+		case 0x1e:	// 53278
+			// TODO: sprite to sprite collision
+			break;
+		case 0x1f:	// 53279
+			// TODO: sprite to foreground collision
+			break;
+		default:	// the rest are color registers so get special handling
+			data = colorPeek(addr);
+		}
+		return data;
+	}
+	
+	private int colorPeek(int addr) {
+		int data = 0;
+		switch (addr) {
+		case 0x20:	// 53280
+			data = borderColor;
+			break;
+		case 0x21:	// 53281
+		case 0x22:	// 53282	used for bitmap multicolor & extended color
+		case 0x23:	// 53283	used for bitmap multicolor & extended color
+		case 0x24:	// 53284	used for extended color
+			backColor[addr - 0x21] = data;
+			break;
+		// TODO: 25-26 sprite mc
+		// TODO: 27-2e sprite color
+		default:	// the rest are not connected, reads return f
+			data = 0xf;
+		}
+		return data | 0xf0;
+	}
+	
+	@Override
+	public void negEdge() {	// marks the beginning of a cycle- counters update here
+		control.negEdge();	// update ba/aec logic
+		currentCycle++;
+		if (currentCycle >= flavor.cyclesPerLine) currentCycle = 0;
+		rasterX++;
+	}
+	
+	@Override
+	public void posEdge() {
+		control.posEdge();	// update ba/aec logic
 	}
 }

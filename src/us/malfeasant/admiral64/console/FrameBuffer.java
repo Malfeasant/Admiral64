@@ -21,7 +21,7 @@ public class FrameBuffer {
 	}
 	
 	public void set(int cycle, int line, int packed) {
-		assert checkRange(cycle, line);
+		assert checkRange(cycle, line);	// only check bounds if asserts are enabled, method will add message if it fails.
 		pixels[cycle + line * cycles] = packed;
 		pixels = pixels;	// Ensure the write is noticed by other threads	TODO: Experimental- verify it works as expected
 	}

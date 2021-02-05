@@ -30,10 +30,15 @@ public class CIA implements CrystalConsumer, PowerConsumer, Peekable, Pokeable {
 	}
 
 	@Override
-	public void cycle() {
-		// TODO implement timer logic
+	public void negEdge() {
+		// TODO implement timer logic - most likely only need to react to a single edge, but who knows...
 	}
 
+	@Override
+	public void posEdge() {
+		// TODO implement timer logic - most likely only need to react to a single edge, but who knows...
+	}
+	
 	@Override
 	public void poke(int addr, int data) {
 		// TODO: implement registers
@@ -44,4 +49,5 @@ public class CIA implements CrystalConsumer, PowerConsumer, Peekable, Pokeable {
 		// TODO: implement registers
 		return 0;
 	}
+
 }
