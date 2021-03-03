@@ -1,6 +1,6 @@
 package us.malfeasant.admiral64.timing;
 
-import javafx.application.Platform;
+import javafx.animation.AnimationTimer;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.ReadOnlyLongProperty;
 import javafx.beans.property.ReadOnlyLongWrapper;
@@ -20,50 +20,62 @@ public class TimingMonitor implements CrystalConsumer, PowerConsumer {
 	public ReadOnlyLongProperty ticksProperty() { return ticksDone.getReadOnlyProperty(); }
 	public long getTicks() { return ticksDone.get(); }
 	
-	private long last = System.currentTimeMillis();	// last interval timestamp
+	private long last = System.nanoTime();	// last interval timestamp
 	private final Alert alert;
 	private final TimingGenerator timing;
 	
-	private int cycles;	// inefficient to track all cycles in property immediately- accumulate a bunch here, then move them periodically
+	private volatile int cycles;	// inefficient to track all cycles in property immediately- accumulate a bunch here, then move them periodically
+	private volatile int ticks;	// same as above, but for ticks
+	// volatile is "good enough" thread safety- race conditions will at worst make the counts temporarily inaccurate (how bad?)
+	private final AnimationTimer updater;	// timer which will grab a batch of cycles and ticks and update their properties
 	
 	public TimingMonitor(TimingGenerator tgen) {
+		updater = new AnimationTimer() {
+			@Override
+			public void handle(long now) {
+				long interval = now - last;
+				last = now;
+				
+				int cyclesNow = cycles;
+				cycles = 0;
+				
+				int ticksNow = ticks;
+				ticks = 0;
+				
+				cyclesDone.set(cyclesDone.get() + cyclesNow);
+				ticksDone.set(ticksDone.get() + ticksNow);
+				elapsed.set(elapsed.get() + interval);			
+			}
+		};
 		timing = tgen;
 		alert = new Alert(AlertType.INFORMATION);
 		alert.initModality(Modality.NONE);
 		alert.setTitle("Timing monitor");
 		alert.setHeaderText("");
+		var seconds = elapsed.divide(1e9);	// convert nanoseconds to seconds
 		alert.contentTextProperty().bind(Bindings.format(
-				"%d cycles in %d seconds: %.9fMHz\n%d ticks in %d seconds: %.3fHz",
+				"%d cycles in %.0f seconds: %.9fMHz\n%d ticks in %.0f seconds: %.3fHz",
 				cyclesDone,
-				elapsed.divide(1000l),
-				cyclesDone.divide(elapsed.multiply(1e3)),
+				seconds,
+				cyclesDone.divide(elapsed.divide(1e3)),	// so we get mhz instead of hz
 				ticksDone,
-				elapsed.divide(1000),
-				ticksDone.multiply(1e3).divide(elapsed)));
+				seconds,
+				ticksDone.divide(seconds)));
 		
 		tgen.addCrystalConsumer(this);
 		tgen.addPowerConsumer(this);
 		alert.setOnHidden(event -> {	// make sure to remove listeners or else gremlins attack
+			updater.stop();
 			timing.removeCrystalConsumer(this);
 			timing.removePowerConsumer(this);
 		});
 		alert.show();
-		elapsed.get();	// otherwise it never gets invalidated, because it was never valid to begin with
+		updater.start();
+//		elapsed.get();	// otherwise it never gets invalidated, because it was never valid to begin with
 	}
 	@Override
 	public void tick() {
-		long now = System.currentTimeMillis();	// ms accuracy should be good enough
-		long interval = now - last;
-		last = now;
-		
-		int cyclesNow = cycles;
-		cycles = 0;
-		
-		Platform.runLater(() -> {
-			cyclesDone.set(cyclesDone.get() + cyclesNow);
-			ticksDone.set(ticksDone.get() + 1);
-			elapsed.set(elapsed.get() + interval);			
-		});
+		++ticks;
 //		System.out.println("Ticks: " + ticksDone.get() + "\tTime: " + elapsed.get());
 	}
 	@Override
