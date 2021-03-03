@@ -24,6 +24,8 @@ public class TimingMonitor implements CrystalConsumer, PowerConsumer {
 	private final Alert alert;
 	private final TimingGenerator timing;
 	
+	private int cycles;	// inefficient to track all cycles in property immediately- accumulate a bunch here, then move them periodically
+	
 	public TimingMonitor(TimingGenerator tgen) {
 		timing = tgen;
 		alert = new Alert(AlertType.INFORMATION);
@@ -50,16 +52,24 @@ public class TimingMonitor implements CrystalConsumer, PowerConsumer {
 	}
 	@Override
 	public void tick() {
-		Platform.runLater(() -> ticksDone.set(ticksDone.get() + 1));
 		long now = System.currentTimeMillis();	// ms accuracy should be good enough
 		long interval = now - last;
 		last = now;
-		Platform.runLater(() -> elapsed.set(elapsed.get() + interval));
+		
+		int cyclesNow = cycles;
+		cycles = 0;
+		
+		Platform.runLater(() -> {
+			cyclesDone.set(cyclesDone.get() + cyclesNow);
+			ticksDone.set(ticksDone.get() + 1);
+			elapsed.set(elapsed.get() + interval);			
+		});
 //		System.out.println("Ticks: " + ticksDone.get() + "\tTime: " + elapsed.get());
 	}
 	@Override
 	public void posEdge() {
-		Platform.runLater(() -> cyclesDone.set(cyclesDone.get() + 1));
+		++cycles;
+//		Platform.runLater(() -> cyclesDone.set(cyclesDone.get() + 1));
 	}
 	@Override
 	public void negEdge() {}	// only count positive edges
