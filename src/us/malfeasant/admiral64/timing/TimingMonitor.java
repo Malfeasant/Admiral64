@@ -71,17 +71,14 @@ public class TimingMonitor implements CrystalConsumer, PowerConsumer {
 		});
 		alert.show();
 		updater.start();
-//		elapsed.get();	// otherwise it never gets invalidated, because it was never valid to begin with
 	}
 	@Override
 	public void tick() {
 		++ticks;
-//		System.out.println("Ticks: " + ticksDone.get() + "\tTime: " + elapsed.get());
 	}
 	@Override
 	public void posEdge() {
 		++cycles;
-//		Platform.runLater(() -> cyclesDone.set(cyclesDone.get() + 1));
 	}
 	@Override
 	public void negEdge() {}	// only count positive edges

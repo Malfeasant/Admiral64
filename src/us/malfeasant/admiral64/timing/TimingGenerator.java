@@ -12,17 +12,22 @@ import us.malfeasant.admiral64.worker.WorkQueue;
  *	realtime, or uninhibited. 
  */
 public class TimingGenerator {
-	// Most of these must be longs because System.currentTimeMillis() returns long, and rather than casting...
-	private long cyclesSinceTick;	// cycles scaled by a factor, used for ongoing cycles per tick calculation 
-	private int cycleIntervalRem;	// used in realtime calculation to add cycles on occasion (only matters for PAL)
+	private int cyclesSinceTick;	// so even if single stepping, ticks happen in the right places
+	private int tickRemainder;	// since nothing is even multiples
+	private long targetTime = System.currentTimeMillis();	// used for realtime calculation- timestamp of next iteration
+	private int ticksSincePause;	// used for realtime calculation- inefficient (and more remainders!) to pause every tick
+	
 	private final CopyOnWriteArraySet<PowerConsumer> powerConsumers;
 	private final CopyOnWriteArraySet<CrystalConsumer> crystalConsumers;
 	
 	private final HBox buttons = new HBox();
 	private final Oscillator osc;
 	private final Powerline pow;
-	private final int cyclesPerInterval;
-	private final int cyclesPerIntervalRem;
+	private final int cyclesPerTick;
+	private final int cyclesPerTickDiv;
+	private final int cyclesPerTickRem;
+	private final int ticksPerPause;
+	private final int pauseTime;
 	
 	public TimingGenerator(Oscillator o, Powerline p, WorkQueue.WorkSender s) {
 		powerConsumers = new CopyOnWriteArraySet<PowerConsumer>();
@@ -30,8 +35,11 @@ public class TimingGenerator {
 		osc = o;
 		pow = p;
 		
-		cyclesPerInterval = osc.cycles / 1000;
-		cyclesPerIntervalRem = osc.cycles % 1000;
+		ticksPerPause = pow == Powerline.NA ? 3 : 2;	// in realtime, pause every 1/20th second for NA, 1/25th for EU
+		pauseTime = ticksPerPause * 1000 / pow.cycles;	// ends up being time in ms to run that many ticks
+		cyclesPerTickDiv = osc.seconds * pow.cycles;	// NTSC 660, PAL 900 (unless power mismatched, then NTSC 550, PAL 1080)
+		cyclesPerTick = osc.cycles / cyclesPerTickDiv;	// NTSC 17045, PAL 19704 (assuming matching powerline)
+		cyclesPerTickRem = osc.cycles % cyclesPerTickDiv;	// NTSC 300, PAL 875
 		
 		for (RunMode mode : RunMode.values()) {
 			buttons.getChildren().add(mode.makeButton(e -> {
@@ -43,13 +51,7 @@ public class TimingGenerator {
 	
 	// this will be called on the worker thread
 	public void run(RunMode mode) {
-		int cycles = mode == RunMode.STEP ? 1 : cyclesPerInterval;
-		if (mode == RunMode.REAL) {
-			cycleIntervalRem += cyclesPerIntervalRem;
-			cycles += cycleIntervalRem / 1000;	// remainder has accumulated to need a new cycle- should only ever add 1
-			cycleIntervalRem %= 1000;
-		}
-		
+		int cycles = mode == RunMode.STEP ? 1 : cyclesPerTick - cyclesSinceTick;
 		for (int cycle = 0; cycle < cycles; cycle++) {
 			for (CrystalConsumer cc : crystalConsumers) {
 				cc.negEdge();
@@ -57,20 +59,31 @@ public class TimingGenerator {
 			}
 		}
 		
-		cyclesSinceTick += cycles * osc.seconds * pow.cycles;
-		while (cyclesSinceTick > osc.cycles) {	// should be unusual for this to loop more than once
-			cyclesSinceTick -= osc.cycles;
+		cyclesSinceTick += cycles;	// record the number of cycles just run
+		
+		if (cyclesSinceTick >= cyclesPerTick) {
+			tickRemainder += cyclesPerTickRem;
+			int fudge = tickRemainder / cyclesPerTickDiv;	// represents extra cycles that need to be run
+			tickRemainder %= cyclesPerTickDiv;
+			cyclesSinceTick -= cyclesPerTick + fudge;	// if fudge is 1, this leaves cyclesSinceTick at -1, so an extra cycle will be run next time
+			
 			for (PowerConsumer pc : powerConsumers) {
 				pc.tick();
 			}
+			if (mode == RunMode.REAL) ticksSincePause++;
 		}
 		
-		if (mode == RunMode.REAL) {
+		if (mode == RunMode.REAL && ticksSincePause >= ticksPerPause) {
 			// Figure out how long to sleep
-			long diff = osc.seconds - (System.currentTimeMillis() % osc.seconds);
-			try {
-				Thread.sleep(diff);
-			} catch (InterruptedException e) {}
+			targetTime += pauseTime;
+			long now = System.currentTimeMillis();
+			long diff = targetTime - now;	// difference between 1/10th second and next run
+			ticksSincePause = 0;
+			if (diff > 0) {	// if something bogs down the simulation, this will go negative- should catch up before too long?
+				try {
+					Thread.sleep(diff);
+				} catch (InterruptedException e) {}
+			}
 		}
 	}
 	
