@@ -24,9 +24,11 @@ public class TimingMonitor implements CrystalConsumer, PowerConsumer {
 	private final Alert alert;
 	private final TimingGenerator timing;
 	
-	private volatile int cycles;	// inefficient to track all cycles in property immediately- accumulate a bunch here, then move them periodically
-	private volatile int ticks;	// same as above, but for ticks
-	// volatile is "good enough" thread safety- race conditions will at worst make the counts temporarily inaccurate (how bad?)
+	private int cycles;	// inefficient to track all cycles in property immediately- accumulate a bunch here, then move them periodically
+	private int ticks;	// same as above, but for ticks
+	private final Object lock = new Object();	// volatile is *not* "good enough" thread safety- race conditions make it read fast
+	// with locking added, rate is dead on (performance is noticeably affected, though only when monitor is present)
+	// fast is 25x, was 40x without lock
 	private final AnimationTimer updater;	// timer which will grab a batch of cycles and ticks and update their properties
 	
 	public TimingMonitor(TimingGenerator tgen) {
@@ -35,13 +37,15 @@ public class TimingMonitor implements CrystalConsumer, PowerConsumer {
 			public void handle(long now) {
 				long interval = now - last;
 				last = now;
-				
-				int cyclesNow = cycles;
-				cycles = 0;
-				
-				int ticksNow = ticks;
-				ticks = 0;
-				
+				int cyclesNow;
+				int ticksNow;
+				synchronized (lock) {
+					cyclesNow = cycles;
+					cycles = 0;
+					
+					ticksNow = ticks;
+					ticks = 0;
+				}
 				cyclesDone.set(cyclesDone.get() + cyclesNow);
 				ticksDone.set(ticksDone.get() + ticksNow);
 				elapsed.set(elapsed.get() + interval);			
@@ -74,11 +78,15 @@ public class TimingMonitor implements CrystalConsumer, PowerConsumer {
 	}
 	@Override
 	public void tick() {
-		++ticks;
+		synchronized (lock) {
+			++ticks;
+		}
 	}
 	@Override
 	public void posEdge() {
-		++cycles;
+		synchronized (lock) {
+			++cycles;
+		}
 	}
 	@Override
 	public void negEdge() {}	// only count positive edges
