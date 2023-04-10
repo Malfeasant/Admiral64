@@ -13,3 +13,10 @@ hs_err_pid*
 /bin
 /nbproject/private/
 /build.xml
+
+# eclipse litter?
+/.project
+/.classpath
+
+# vscode
+/.vscode/
