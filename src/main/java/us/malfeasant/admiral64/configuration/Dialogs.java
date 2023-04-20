@@ -45,7 +45,6 @@ public class Dialogs {
         private final TextField nameField;
         private final ChoiceBox<Oscillator> oscBox;
         private final ChoiceBox<Power> powBox;
-        private ConfigurationBuilder builder;
 
         Singleton() {
             dialog = new Dialog<>();
@@ -62,16 +61,6 @@ public class Dialogs {
             pane.add(powBox, 2, 0);
             dialog.getDialogPane().getButtonTypes().addAll(ButtonType.APPLY, ButtonType.CANCEL);
             dialog.getDialogPane().setContent(pane);
-            dialog.setResultConverter(type -> {
-                if (type == ButtonType.APPLY) {
-                    Logger.debug("Creating new machine named " + builder.nameProperty.get() +
-                        " with Oscillator " + builder.oscillatorProperty.get() +
-                        " and Power " + builder.powerProperty.get());
-                    return builder.makeFrom();
-                }
-                Logger.debug("Looks like user cancelled machine creation...");
-                return null;
-            });
         }
     }
 
@@ -91,10 +80,21 @@ public class Dialogs {
 
         Platform.runLater(() -> I.nameField.requestFocus());
         
-        I.builder = new ConfigurationBuilder();
-        I.builder.nameProperty.bind(I.nameField.textProperty());
-        I.builder.oscillatorProperty.bind(I.oscBox.valueProperty());
-        I.builder.powerProperty.bind(I.powBox.valueProperty());
+        var builder = new ConfigurationBuilder();
+        builder.nameProperty.bind(I.nameField.textProperty());
+        builder.oscillatorProperty.bind(I.oscBox.valueProperty());
+        builder.powerProperty.bind(I.powBox.valueProperty());
+
+        I.dialog.setResultConverter(type -> {
+            if (type == ButtonType.APPLY) {
+                Logger.debug("Creating new machine named " + builder.nameProperty.get() +
+                    " with Oscillator " + builder.oscillatorProperty.get() +
+                    " and Power " + builder.powerProperty.get());
+                return builder.makeFrom();
+            }
+            Logger.debug("Looks like user cancelled machine creation...");
+            return null;
+        });
 
         return I.dialog.showAndWait();
     }
