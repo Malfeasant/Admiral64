@@ -18,6 +18,7 @@ import javafx.scene.layout.GridPane;
 import javafx.stage.Stage;
 import us.malfeasant.admiral64.configuration.Configuration;
 import us.malfeasant.admiral64.configuration.ConfigurationBuilder;
+import us.malfeasant.admiral64.configuration.Dialogs;
 import us.malfeasant.admiral64.configuration.Oscillator;
 import us.malfeasant.admiral64.configuration.Power;
 
@@ -26,7 +27,6 @@ public class App extends Application {
     public void start(Stage stage) throws Exception {
         Logger.debug("Building window...");
 
-        
 //        var controlbar = new VBox(buildMenu()); // TODO add a toolbar too- new, edit, delete...
         var controlbar = buildMenu();
         var pane = new BorderPane();
@@ -48,38 +48,7 @@ public class App extends Application {
 
     private void handleNew(ActionEvent e) {
         Logger.debug("Handling Create");
-        var dialog = new Dialog<Configuration>();
-        dialog.setTitle("Build new machine");
-        var createType = new ButtonType("Create", ButtonData.OK_DONE);
-        dialog.getDialogPane().getButtonTypes().addAll(createType, ButtonType.CANCEL);
-        var pane = new GridPane();
-        var nameField = new TextField();
-        nameField.setPromptText("Enter machine name:");
-        pane.add(nameField, 0, 0);
-
-        var oscBox = new ChoiceBox<Oscillator>();
-        oscBox.getItems().addAll(Oscillator.values());
-        oscBox.getSelectionModel().clearAndSelect(0);
-        var powBox = new ChoiceBox<Power>();
-        powBox.getItems().addAll(Power.values());
-        powBox.getSelectionModel().clearAndSelect(0);
-        pane.add(oscBox, 1, 0);
-        pane.add(powBox, 2, 0);
-
-        var builder = new ConfigurationBuilder();
-        builder.nameProperty.bind(nameField.textProperty());
-        // TODO builder.oscillatorProperty.bind(oscBox.. how?);
-        dialog.getDialogPane().setContent(pane);
-
-        dialog.setResultConverter(buttonType -> {
-            if (buttonType == createType) {
-                Logger.debug("Creating new machine named " + builder.nameProperty.get());
-                return builder.makeFrom();
-            }
-            Logger.debug("Looks like user cancelled machine creation...");
-            return null;
-        });
-        dialog.showAndWait();   // TODO make use of it...
+        Dialogs.showCreateDialog();
     }
     private void handleOpen(ActionEvent e) {
         Logger.debug("Handling Open");

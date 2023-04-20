@@ -17,6 +17,6 @@ public class ConfigurationBuilder {
     }
 
     public Configuration makeFrom() {
-        return new Configuration(oscillatorProperty.get(), powerProperty.get());
+        return new Configuration(nameProperty.get(), oscillatorProperty.get(), powerProperty.get());
     }
 }
