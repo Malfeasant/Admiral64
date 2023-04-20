@@ -5,22 +5,12 @@ import org.tinylog.Logger;
 import javafx.application.Application;
 import javafx.event.ActionEvent;
 import javafx.scene.Scene;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.ChoiceBox;
-import javafx.scene.control.Dialog;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
-import javafx.scene.control.TextField;
-import javafx.scene.control.ButtonBar.ButtonData;
 import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.GridPane;
 import javafx.stage.Stage;
-import us.malfeasant.admiral64.configuration.Configuration;
-import us.malfeasant.admiral64.configuration.ConfigurationBuilder;
 import us.malfeasant.admiral64.configuration.Dialogs;
-import us.malfeasant.admiral64.configuration.Oscillator;
-import us.malfeasant.admiral64.configuration.Power;
 
 public class App extends Application {
     @Override
