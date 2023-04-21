@@ -6,6 +6,7 @@ public enum Power {
     NA, EU;
 
     // TODO find a way to generalize this for both Oscillator & Power
+    // The StringConverter is required to make ObjectProperty work
     public StringConverter<Power> getConverter() {
         return new StringConverter<Power>() {
 

@@ -87,9 +87,8 @@ public class Dialogs {
 
         I.dialog.setResultConverter(type -> {
             if (type == ButtonType.APPLY) {
-                Logger.debug("Creating new machine named " + builder.nameProperty.get() +
-                    " with Oscillator " + builder.oscillatorProperty.get() +
-                    " and Power " + builder.powerProperty.get());
+                Logger.debug("Creating new machine named {} with Oscillator {} and Power {}",
+                    builder.nameProperty.get(), builder.oscillatorProperty.get(), builder.powerProperty.get());
                 return builder.makeFrom();
             }
             Logger.debug("Looks like user cancelled machine creation...");

@@ -6,6 +6,7 @@ public enum Oscillator {
     NTSC, PAL;
 
     // TODO find a way to generalize this for both Oscillator & Power
+    // The StringConverter is required to make ObjectProperty work
     public StringConverter<Oscillator> getConverter() {
         return new StringConverter<Oscillator>() {
 
