@@ -38,7 +38,7 @@ public class Dialogs {
      * Nifty way to make a lazily initialized singleton object without
      * having to worry about any concurrency gotchas
      */
-    private static enum Singleton {
+    private enum ConfigDialog {
         INSTANCE;
 
         private final Dialog<Configuration> dialog;
@@ -46,7 +46,7 @@ public class Dialogs {
         private final ChoiceBox<Oscillator> oscBox;
         private final ChoiceBox<Power> powBox;
 
-        Singleton() {
+        ConfigDialog() {
             dialog = new Dialog<>();
             nameField = new TextField();
             nameField.setPromptText("Machine name:");
@@ -65,7 +65,7 @@ public class Dialogs {
     }
 
     private static Optional<Configuration> showDialog(Configuration oldConfiguration) {
-        var I = Singleton.INSTANCE; // shorthand...
+        var I = ConfigDialog.INSTANCE; // shorthand...
         if (oldConfiguration == null) { // if nothing passed in, build a new one
             I.dialog.setTitle("Build new machine");
             I.nameField.setText("");
@@ -87,11 +87,11 @@ public class Dialogs {
 
         I.dialog.setResultConverter(type -> {
             if (type == ButtonType.APPLY) {
-                Logger.debug("Creating new machine named {} with Oscillator {} and Power {}",
+                Logger.debug("Storing Configuration name {} with Oscillator {} and Power {}",
                     builder.nameProperty.get(), builder.oscillatorProperty.get(), builder.powerProperty.get());
                 return builder.makeFrom();
             }
-            Logger.debug("Looks like user cancelled machine creation...");
+            Logger.debug("Looks like user cancelled Configuration dialog...");
             return null;
         });
 
