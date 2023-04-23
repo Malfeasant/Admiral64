@@ -15,4 +15,9 @@ public class Configuration {
         oscillator = osc;
         power = pow;
     }
+
+    @Override
+    public String toString() {
+        return name + ": " + oscillator + ", " + power;
+    }
 }
