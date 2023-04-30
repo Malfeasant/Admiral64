@@ -2,8 +2,8 @@ package us.malfeasant.admiral64.machine;
 
 import org.tinylog.Logger;
 
+import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.beans.property.ReadOnlyBooleanWrapper;
-import javafx.beans.value.ObservableBooleanValue;
 import us.malfeasant.admiral64.configuration.Configuration;
 
 /**
@@ -12,8 +12,11 @@ import us.malfeasant.admiral64.configuration.Configuration;
 public class Machine {
     public final Configuration config;
     private final ReadOnlyBooleanWrapper runningWrapper = new ReadOnlyBooleanWrapper(false);
-    public final ObservableBooleanValue runningProperty = runningWrapper.getReadOnlyProperty();
+    private final ReadOnlyBooleanProperty runningProperty = runningWrapper.getReadOnlyProperty();
 
+    public ReadOnlyBooleanProperty runningProperty() {
+        return runningProperty;
+    }
     public Machine(Configuration conf) {
         config = conf;
         Logger.info("Building new machine: {}", config);
@@ -24,6 +27,7 @@ public class Machine {
      */
     public void start() {
         Logger.info("Starting machine {}", config);
+        runningWrapper.set(true);
     }
 
     /**
@@ -31,13 +35,15 @@ public class Machine {
      */
     public void freeze() {
         Logger.info("Freezing machine {}", config);
+        runningWrapper.set(false);
     }
 
     /**
      * Kill a running machine, akin to pulling the plug
      */
     public void stop() {
-        Logger.info("Starting machine {}", config);
+        Logger.info("Stopping machine {}", config);
+        runningWrapper.set(false);
     }
 
     public String toString() {

@@ -3,6 +3,7 @@ package us.malfeasant.admiral64;
 import org.tinylog.Logger;
 
 import javafx.application.Application;
+import javafx.beans.binding.Bindings;
 import javafx.collections.FXCollections;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
@@ -38,35 +39,32 @@ public class App extends Application {
     }
 
     private MenuBar buildMenu() {
-        var notSelectedProperty = listView.getSelectionModel().selectedItemProperty().isNull();
+        var selected = listView.getSelectionModel().selectedItemProperty();
+        var notSelectedProperty = selected.isNull();
+        var runningBinding = Bindings.selectBoolean(selected.flatMap(Machine::runningProperty));
 
         var create = new MenuItem("New...");
         create.setOnAction(e -> handleNew());
 
         var edit = new MenuItem("Edit...");
         edit.setOnAction(e -> handleEdit());
-        edit.disableProperty().bind(notSelectedProperty);
-        // TODO - if machine is running, this should be disabled
+        edit.disableProperty().bind(notSelectedProperty.or(runningBinding));
         
         var remove = new MenuItem("Delete...");
         remove.setOnAction(e -> handleDelete());
-        remove.disableProperty().bind(notSelectedProperty);
-        // TODO - if machine is running, this should be disabled
+        remove.disableProperty().bind(notSelectedProperty.or(runningBinding));
 
         var start = new MenuItem("Start");
         start.setOnAction(e -> handleStart());
-        start.disableProperty().bind(notSelectedProperty);
-        // TODO - if machine is running, this should be disabled
+        start.disableProperty().bind(notSelectedProperty.or(runningBinding));
 
         var freeze = new MenuItem("Freeze");
         freeze.setOnAction(e -> handleFreeze());
-        freeze.disableProperty().bind(notSelectedProperty);
-        // TODO - if machine is not running, this should be disabled
+        freeze.disableProperty().bind(notSelectedProperty.or(runningBinding.not()));
 
         var stop = new MenuItem("Stop");
         stop.setOnAction(e -> handleStop());
-        stop.disableProperty().bind(notSelectedProperty);
-        // TODO - if machine is not running, this should be disabled
+        stop.disableProperty().bind(notSelectedProperty.or(runningBinding.not()));
         
         var open = new MenuItem("Import...");
         open.setOnAction(e -> handleOpen());
@@ -126,11 +124,13 @@ public class App extends Application {
     }
     private void handleFreeze() {
         Logger.debug("Handling Suspend");
-        // TODO
+        if (listView.getSelectionModel().isEmpty()) return;
+        listView.getSelectionModel().getSelectedItem().freeze();
     }
     private void handleStop() {
         Logger.debug("Handling Stop");
-        // TODO
+        if (listView.getSelectionModel().isEmpty()) return;
+        listView.getSelectionModel().getSelectedItem().stop();
     }
 
 	public static void main(String[] args) {
