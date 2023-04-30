@@ -16,12 +16,12 @@ import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.layout.BorderPane;
 import javafx.stage.Stage;
-import us.malfeasant.admiral64.configuration.Configuration;
 import us.malfeasant.admiral64.configuration.Dialogs;
+import us.malfeasant.admiral64.machine.Machine;
 
 public class App extends Application {
-    private final ListView<Configuration> listView = new ListView<>(FXCollections.observableArrayList());
-
+    private final ListView<Machine> listView = new ListView<>(FXCollections.observableArrayList());
+    
     @Override
     public void start(Stage stage) throws Exception {
         Logger.debug("Building window...");
@@ -46,14 +46,27 @@ public class App extends Application {
         var edit = new MenuItem("Edit...");
         edit.setOnAction(e -> handleEdit());
         edit.disableProperty().bind(notSelectedProperty);
+        // TODO - if machine is running, this should be disabled
         
         var remove = new MenuItem("Delete...");
         remove.setOnAction(e -> handleDelete());
         remove.disableProperty().bind(notSelectedProperty);
+        // TODO - if machine is running, this should be disabled
 
         var start = new MenuItem("Start");
         start.setOnAction(e -> handleStart());
         start.disableProperty().bind(notSelectedProperty);
+        // TODO - if machine is running, this should be disabled
+
+        var freeze = new MenuItem("Freeze");
+        freeze.setOnAction(e -> handleFreeze());
+        freeze.disableProperty().bind(notSelectedProperty);
+        // TODO - if machine is not running, this should be disabled
+
+        var stop = new MenuItem("Stop");
+        stop.setOnAction(e -> handleStop());
+        stop.disableProperty().bind(notSelectedProperty);
+        // TODO - if machine is not running, this should be disabled
         
         var open = new MenuItem("Import...");
         open.setOnAction(e -> handleOpen());
@@ -67,14 +80,14 @@ public class App extends Application {
 
         var sep = new SeparatorMenuItem();
         var file = new Menu("File", null, open, save, sep, quit);
-        var machine = new Menu("Machine", null, create, edit, remove, sep, start);
+        var machine = new Menu("Machine", null, create, edit, remove, sep, start, freeze, stop);
         return new MenuBar(file, machine);
     }
 
     private void handleNew() {
         Logger.debug("Handling Create");
         var opt = Dialogs.showCreateDialog();
-        opt.ifPresent(config -> listView.getItems().add(config));
+        opt.ifPresent(config -> listView.getItems().add(new Machine(config)));
     }
     private void handleEdit() {
         Logger.debug("Handling Edit");
@@ -82,8 +95,8 @@ public class App extends Application {
         // shouldn't need this since we disable the item when nothing is selected- but why tempt fate?
         if (selIndex < 0) return;   // -1 signifies nothing is selected
         var selItem = listView.getSelectionModel().getSelectedItem();
-        var opt = Dialogs.showEditDialog(selItem);
-        opt.ifPresent(config -> listView.getItems().set(selIndex, config));
+        var opt = Dialogs.showEditDialog(selItem.config);
+        opt.ifPresent(config -> listView.getItems().set(selIndex, new Machine(config)));
     }
     private void handleDelete() {
         Logger.debug("Handling Delete");
@@ -109,6 +122,14 @@ public class App extends Application {
     private void handleStart() {
         Logger.debug("Handling Start");
         if (listView.getSelectionModel().isEmpty()) return; // can't run nothing...
+        listView.getSelectionModel().getSelectedItem().start();
+    }
+    private void handleFreeze() {
+        Logger.debug("Handling Suspend");
+        // TODO
+    }
+    private void handleStop() {
+        Logger.debug("Handling Stop");
         // TODO
     }
 
