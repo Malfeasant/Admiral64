@@ -8,6 +8,7 @@ import javafx.collections.FXCollections;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
+import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
@@ -31,8 +32,17 @@ public class App extends Application {
         var controlbar = buildMenu();
         var pane = new BorderPane();
         pane.setTop(controlbar);
-//        listView = new ListView<>(FXCollections.observableArrayList());
+        
         listView.getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
+        listView.setCellFactory(lv -> {
+            return new ListCell<>() {
+                @Override
+                protected void updateItem(Machine item, boolean empty) {
+                    super.updateItem(item, empty);
+                    setText(item == null ? "" : item.config.cellLabel());
+                }
+            };
+        });
         pane.setLeft(listView);
         stage.setScene(new Scene(pane));
         stage.show();
