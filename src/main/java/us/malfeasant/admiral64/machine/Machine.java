@@ -45,9 +45,4 @@ public class Machine {
         Logger.info("Stopping machine {}", config);
         runningWrapper.set(false);
     }
-
-    public String toString() {
-        // TODO This is not ideal...  wouldn't be needed if we had a custom ListCell...
-        return config.toString();
-    }
 }

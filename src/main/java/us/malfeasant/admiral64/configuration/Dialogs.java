@@ -4,6 +4,7 @@ import java.util.Optional;
 import org.tinylog.Logger;
 
 import javafx.application.Platform;
+import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.Dialog;
@@ -60,6 +61,8 @@ public class Dialogs {
             pane.add(oscBox, 1, 0);
             pane.add(powBox, 2, 0);
             dialog.getDialogPane().getButtonTypes().addAll(ButtonType.APPLY, ButtonType.CANCEL);
+            // The following seems like a major kludge... but it's needed to allow Enter key to fire the Apply button.
+            ((Button) (dialog.getDialogPane().lookupButton(ButtonType.APPLY))).setDefaultButton(true);
             dialog.getDialogPane().setContent(pane);
         }
     }

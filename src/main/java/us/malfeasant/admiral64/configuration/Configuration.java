@@ -16,6 +16,10 @@ public class Configuration {
         power = pow;
     }
 
+    @Override
+    public String toString() {
+        return "Configuration: " + cellLabel();
+    }
     public String cellLabel() {
         return name + ": " + oscillator + ", " + power;
     }
