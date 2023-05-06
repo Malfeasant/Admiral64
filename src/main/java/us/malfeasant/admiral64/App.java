@@ -50,7 +50,7 @@ public class App extends Application {
 
     private MenuBar buildMenu() {
         var selected = listView.getSelectionModel().selectedItemProperty();
-        var notSelectedProperty = selected.isNull();
+        var notSelectedBinding = selected.isNull();
         var runningBinding = Bindings.selectBoolean(selected.flatMap(Machine::runningProperty));
 
         var create = new MenuItem("New...");
@@ -58,37 +58,36 @@ public class App extends Application {
 
         var edit = new MenuItem("Edit...");
         edit.setOnAction(e -> handleEdit());
-        edit.disableProperty().bind(notSelectedProperty.or(runningBinding));
+        edit.disableProperty().bind(notSelectedBinding.or(runningBinding));
         
         var remove = new MenuItem("Delete...");
         remove.setOnAction(e -> handleDelete());
-        remove.disableProperty().bind(notSelectedProperty.or(runningBinding));
+        remove.disableProperty().bind(notSelectedBinding.or(runningBinding));
 
         var start = new MenuItem("Start");
         start.setOnAction(e -> handleStart());
-        start.disableProperty().bind(notSelectedProperty.or(runningBinding));
+        start.disableProperty().bind(notSelectedBinding.or(runningBinding));
 
         var freeze = new MenuItem("Freeze");
         freeze.setOnAction(e -> handleFreeze());
-        freeze.disableProperty().bind(notSelectedProperty.or(runningBinding.not()));
+        freeze.disableProperty().bind(notSelectedBinding.or(runningBinding.not()));
 
         var stop = new MenuItem("Stop");
         stop.setOnAction(e -> handleStop());
-        stop.disableProperty().bind(notSelectedProperty.or(runningBinding.not()));
+        stop.disableProperty().bind(notSelectedBinding.or(runningBinding.not()));
         
         var open = new MenuItem("Import...");
         open.setOnAction(e -> handleOpen());
         
         var save = new MenuItem("Export...");
         save.setOnAction(e -> handleSave());
-        save.disableProperty().bind(notSelectedProperty);
+        save.disableProperty().bind(notSelectedBinding);
         
         var quit = new MenuItem("Exit");
         quit.setOnAction(e -> handleQuit());
 
-        var sep = new SeparatorMenuItem();
-        var file = new Menu("File", null, open, save, sep, quit);
-        var machine = new Menu("Machine", null, create, edit, remove, sep, start, freeze, stop);
+        var file = new Menu("File", null, open, save, new SeparatorMenuItem(), quit);
+        var machine = new Menu("Machine", null, create, edit, remove, new SeparatorMenuItem(), start, freeze, stop);
         return new MenuBar(file, machine);
     }
 
