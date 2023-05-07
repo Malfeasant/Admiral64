@@ -2,6 +2,7 @@ package us.malfeasant.admiral64.machine;
 
 import org.tinylog.Logger;
 
+import javafx.animation.AnimationTimer;
 import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.beans.property.ReadOnlyBooleanWrapper;
 import us.malfeasant.admiral64.configuration.Configuration;
@@ -13,6 +14,7 @@ public class Machine {
     public final Configuration config;
     private final ReadOnlyBooleanWrapper runningWrapper = new ReadOnlyBooleanWrapper(false);
     private final ReadOnlyBooleanProperty runningProperty = runningWrapper.getReadOnlyProperty();
+    private final AnimationTimer timer;
 
     public ReadOnlyBooleanProperty runningProperty() {
         return runningProperty;
@@ -20,6 +22,16 @@ public class Machine {
     public Machine(Configuration conf) {
         config = conf;
         Logger.info("Building new machine: {}", config);
+        timer = new AnimationTimer() {
+            @Override
+            public void handle(long now) {
+                handleTimer(now);
+            }
+        };
+    }
+
+    private void handleTimer(long now) {
+
     }
 
     /**
@@ -27,6 +39,7 @@ public class Machine {
      */
     public void start() {
         Logger.info("Starting machine {}", config);
+        timer.start();
         runningWrapper.set(true);
     }
 
@@ -35,7 +48,17 @@ public class Machine {
      */
     public void freeze() {
         Logger.info("Freezing machine {}", config);
+        timer.stop();
         runningWrapper.set(false);
+    }
+
+    /**
+     * Resume a suspended machine
+     */
+    public void thaw() {
+        Logger.info("Thawing machine {}", config);
+        timer.start();
+        runningWrapper.set(true);
     }
 
     /**
@@ -43,6 +66,7 @@ public class Machine {
      */
     public void stop() {
         Logger.info("Stopping machine {}", config);
+        timer.stop();
         runningWrapper.set(false);
     }
 }

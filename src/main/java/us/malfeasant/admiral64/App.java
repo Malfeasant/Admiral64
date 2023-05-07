@@ -72,6 +72,10 @@ public class App extends Application {
         freeze.setOnAction(e -> handleFreeze());
         freeze.disableProperty().bind(notSelectedBinding.or(runningBinding.not()));
 
+        var thaw = new MenuItem("Unfreeze");
+        thaw.setOnAction(e -> handleThaw());
+        thaw.disableProperty().bind(notSelectedBinding.or(runningBinding));
+
         var stop = new MenuItem("Stop");
         stop.setOnAction(e -> handleStop());
         stop.disableProperty().bind(notSelectedBinding.or(runningBinding.not()));
@@ -135,6 +139,11 @@ public class App extends Application {
         Logger.debug("Handling Suspend");
         if (listView.getSelectionModel().isEmpty()) return;
         listView.getSelectionModel().getSelectedItem().freeze();
+    }
+    private void handleThaw() {
+        Logger.debug("Handling Resume");
+        if (listView.getSelectionModel().isEmpty()) return;
+        listView.getSelectionModel().getSelectedItem().thaw();
     }
     private void handleStop() {
         Logger.debug("Handling Stop");
