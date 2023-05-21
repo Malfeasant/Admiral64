@@ -44,7 +44,7 @@ public class Machine {
     }
 
     /**
-     * Suspend a running machine- snapshot the RAM, anything else?
+     * Suspend a running machine- TODO snapshot the RAM, anything else?
      */
     public void freeze() {
         Logger.info("Freezing machine {}", config);
