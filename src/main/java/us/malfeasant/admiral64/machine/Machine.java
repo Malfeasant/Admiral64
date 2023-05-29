@@ -16,18 +16,23 @@ public class Machine {
     private final ReadOnlyBooleanProperty runningProperty = runningWrapper.getReadOnlyProperty();
     private final AnimationTimer timer;
 
-    public ReadOnlyBooleanProperty runningProperty() {
-        return runningProperty;
-    }
+    private final Console console;
+
     public Machine(Configuration conf) {
         config = conf;
         Logger.info("Building new machine: {}", config);
+        console = new Console(this);
+
         timer = new AnimationTimer() {
             @Override
             public void handle(long now) {
                 handleTimer(now);
             }
         };
+    }
+
+    public ReadOnlyBooleanProperty runningProperty() {
+        return runningProperty;
     }
 
     private void handleTimer(long now) {
@@ -39,6 +44,7 @@ public class Machine {
      */
     public void start() {
         Logger.info("Starting machine {}", config);
+        
         timer.start();
         runningWrapper.set(true);
     }
@@ -68,5 +74,13 @@ public class Machine {
         Logger.info("Stopping machine {}", config);
         timer.stop();
         runningWrapper.set(false);
+    }
+
+    /**
+     * Set the simulation mode/speed.
+     * @param m the RunMode enum
+     */
+    public void setSpeed(RunMode m) {
+
     }
 }
