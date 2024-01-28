@@ -7,27 +7,76 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.compiler.release>11</maven.compiler.release>
+        <maven.compiler.release>21</maven.compiler.release>
         <mainClassName>us.malfeasant.admiral64.Launch</mainClassName>
+        <jfx.version>21</jfx.version>
     </properties>
+    
+	<profiles>
+		<profile>
+			<id>fatjar</id>
+			<!-- used for cross-platform fat jar,
+                 but breaks javafx:run so we stick
+                 it in a profile -->
+			<dependencies>
+		        <dependency>
+		            <groupId>org.openjfx</groupId>
+		            <artifactId>javafx-graphics</artifactId>
+		            <version>${jfx.version}</version>
+		            <classifier>win</classifier>
+		        </dependency>
+		        <dependency>
+		            <groupId>org.openjfx</groupId>
+		            <artifactId>javafx-graphics</artifactId>
+		            <version>${jfx.version}</version>
+		            <classifier>linux</classifier>
+		        </dependency>
+		        <dependency>
+		            <groupId>org.openjfx</groupId>
+		            <artifactId>javafx-graphics</artifactId>
+		            <version>${jfx.version}</version>
+		            <classifier>mac</classifier>
+		        </dependency>
+		        <dependency>
+		            <groupId>org.openjfx</groupId>
+		            <artifactId>javafx-graphics</artifactId>
+		            <version>${jfx.version}</version>
+		            <classifier>mac-aarch64</classifier>
+		        </dependency>
+			</dependencies>
+
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-shade-plugin</artifactId>
+                        <version>3.4.1</version>
+                        <executions>
+                            <execution>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>shade</goal>
+                                </goals>
+                                <configuration>
+                                    <transformers>
+                                        <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                            <mainClass>${mainClassName}</mainClass>
+                                        </transformer>
+                                    </transformers>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+		</profile>
+	</profiles>
+
     <dependencies>
         <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-controls</artifactId>
-            <version>20</version>
-            <classifier>win</classifier>
-        </dependency>
-        <dependency>
-            <groupId>org.openjfx</groupId>
-            <artifactId>javafx-controls</artifactId>
-            <version>20</version>
-            <classifier>mac</classifier>
-        </dependency>
-        <dependency>
-            <groupId>org.openjfx</groupId>
-            <artifactId>javafx-controls</artifactId>
-            <version>20</version>
-            <classifier>linux</classifier>
+            <version>${jfx.version}</version>
         </dependency>
 
         <dependency>
@@ -51,27 +100,6 @@
             </plugin>
 
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-shade-plugin</artifactId>
-                <version>3.4.1</version>
-                <executions>
-                    <execution>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>shade</goal>
-                        </goals>
-                        <configuration>
-                            <transformers>
-                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                    <mainClass>${mainClassName}</mainClass>
-                                </transformer>
-                            </transformers>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-
-            <plugin>
                 <groupId>org.openjfx</groupId>
                 <artifactId>javafx-maven-plugin</artifactId>
                 <version>0.0.8</version>
@@ -80,26 +108,10 @@
                         <id>default-cli</id>
                         <configuration>
                             <mainClass>${mainClassName}</mainClass>
-                            <stripDebug>true</stripDebug>
-                            <compress>2</compress>
-                            <noHeaderFiles>true</noHeaderFiles>
-                            <noManPages>true</noManPages>
-                            <launcher>${project.artifactId}</launcher>
-                            <jlinkImageName>${project.artifactId}</jlinkImageName>
-                            <jlinkZipName>${project.artifactId}</jlinkZipName>
                         </configuration>
                     </execution>
                 </executions>
             </plugin>
-
-            <!--plugin>
-                <groupId>com.gluonfx</groupId>
-                <artifactId>gluonfx-maven-plugin</artifactId>
-                <version>1.0.13</version>
-                <configuration>
-                    <mainClass>${mainClassName}</mainClass>
-                </configuration>
-            </plugin-->
         </plugins>
     </build>
 </project>
