@@ -46,6 +46,7 @@ public class Dialogs {
         private final TextField nameField;
         private final ChoiceBox<Oscillator> oscBox;
         private final ChoiceBox<Power> powBox;
+        private final ChoiceBox<TimeSource> tsBox;
 
         ConfigDialog() {
             dialog = new Dialog<>();
@@ -55,11 +56,14 @@ public class Dialogs {
             oscBox.getItems().addAll(Oscillator.values());
             powBox = new ChoiceBox<Power>();
             powBox.getItems().addAll(Power.values());
+            tsBox = new ChoiceBox<>();
+            tsBox.getItems().addAll(TimeSource.values());
 
             var pane = new GridPane();
             pane.add(nameField, 0, 0);
             pane.add(oscBox, 1, 0);
             pane.add(powBox, 2, 0);
+            pane.add(tsBox, 3, 0);
             dialog.getDialogPane().getButtonTypes().addAll(ButtonType.APPLY, ButtonType.CANCEL);
             // The following seems like a major kludge... but it's needed to allow Enter key to fire the Apply button.
             ((Button) (dialog.getDialogPane().lookupButton(ButtonType.APPLY))).setDefaultButton(true);
@@ -74,11 +78,13 @@ public class Dialogs {
             I.nameField.setText("");
             I.oscBox.getSelectionModel().clearAndSelect(0); // set a default
             I.powBox.getSelectionModel().clearAndSelect(0); // otherwise nothing is selected
+            I.tsBox.getSelectionModel().clearAndSelect(0);
         } else {
             I.dialog.setTitle("Edit machine");
             I.nameField.setText(oldConfiguration.name);
             I.oscBox.getSelectionModel().clearAndSelect(oldConfiguration.oscillator.ordinal());
             I.powBox.getSelectionModel().clearAndSelect(oldConfiguration.power.ordinal());
+            I.tsBox.getSelectionModel().clearAndSelect(oldConfiguration.timeSource.ordinal());
         }
 
         Platform.runLater(() -> I.nameField.requestFocus());
@@ -87,11 +93,12 @@ public class Dialogs {
         builder.nameProperty.bind(I.nameField.textProperty());
         builder.oscillatorProperty.bind(I.oscBox.valueProperty());
         builder.powerProperty.bind(I.powBox.valueProperty());
+        builder.timeSourceProperty.bind(I.tsBox.valueProperty());
 
         I.dialog.setResultConverter(type -> {
             if (type == ButtonType.APPLY) {
-                Logger.debug("Storing Configuration name {} with Oscillator {} and Power {}",
-                    builder.nameProperty.get(), builder.oscillatorProperty.get(), builder.powerProperty.get());
+                Logger.debug("Storing Configuration name {} with Oscillator {}, Power {}, and TimeSource {}",
+                    builder.nameProperty.get(), builder.oscillatorProperty.get(), builder.powerProperty.get(), builder.timeSourceProperty.get());
                 return builder.makeFrom();
             }
             Logger.debug("Looks like user cancelled Configuration dialog...");
